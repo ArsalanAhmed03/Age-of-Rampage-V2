@@ -40,12 +40,25 @@ public class SelectionScreenManager : MonoBehaviour
     [Header("Buy Screen")]
     public UpgradeScreenUI BuyScreenUI;
 
+    [SerializeField] private Button loadLoadoutButton;
+    [SerializeField] private Button saveLoadoutButton;
+
 
     private void Start()
     {
         CreateUnitButtons();
         LoadoutData.selectedFrontline.Clear();
         LoadoutData.selectedBackline.Clear();
+        saveLoadoutButton.onClick.AddListener(() =>
+        {
+            OnSaveLoadoutBtnClicked();
+        });
+
+        loadLoadoutButton.onClick.AddListener(() =>
+        {
+            OnLoadUpdateBtnClicked();
+        });
+
         // PopulateUnitButtons();
         UpdateCountText();
 
@@ -56,6 +69,59 @@ public class SelectionScreenManager : MonoBehaviour
             if (drop == null)
                 drop = slotObj.AddComponent<DropSlot>();
             drop.slotIndex = i;
+        }
+    }
+
+    public void OnLoadUpdateBtnClicked()
+    {
+        List<string> loadoutForSlots = new List<string>();
+        for (int i = 0; i < 6; i++)
+        {
+            if (i < PlayerStatsManager.Instance.LoadOut.Count)
+                loadoutForSlots.Add(PlayerStatsManager.Instance.LoadOut[i]);
+            else
+                loadoutForSlots.Add("");
+        }
+        for (int i = 0; i < loadoutSlotsParent.childCount; i++)
+        {
+            Transform slot = loadoutSlotsParent.GetChild(i);
+            DropSlot dropSlot = slot.GetComponent<DropSlot>();
+            if (dropSlot != null)
+            {
+                dropSlot.RemoveUnit();
+            }
+        }
+        Debug.Log("////////////////");
+        AssignUnitsToSlots(loadoutForSlots);
+    }
+
+    public void OnSaveLoadoutBtnClicked()
+    {
+        if (FirebaseUpdater.Instance != null)
+        {
+            List<string> unitNames = new List<string>();
+            for (int i = 0; i < LoadoutData.selectedUnits.Length; i++)
+            {
+                if (LoadoutData.selectedUnits[i] != null)
+                {
+                    unitNames.Add(LoadoutData.selectedUnits[i].name);
+                }
+                else
+                {
+                    unitNames.Add(string.Empty);
+                }
+            }
+            FirebaseUpdater.Instance.UpdateLoadout(unitNames);
+
+            // Also update PlayerStatsManager.LoadOut
+            if (PlayerStatsManager.Instance != null)
+            {
+                PlayerStatsManager.Instance.LoadOut = new List<string>(unitNames);
+            }
+        }
+        else
+        {
+            Debug.LogWarning("FirebaseUpdater.Instance is null!");
         }
     }
 
@@ -151,6 +217,48 @@ public class SelectionScreenManager : MonoBehaviour
             }
         }
     }
+
+    public void AssignUnitsToSlots(List<string> unitNames)
+    {
+        Debug.Log($"Assigning {unitNames.Count} units to slots: {string.Join(", ", unitNames)}");
+        for (int i = 0; i < Mathf.Min(unitNames.Count, loadoutSlotsParent.childCount); i++)
+        {
+            string unitName = unitNames[i];
+            Transform slotTransform = loadoutSlotsParent.GetChild(i);
+            DropSlot dropSlot = slotTransform.GetComponent<DropSlot>();
+            if (dropSlot == null) continue;
+
+            if (!string.IsNullOrEmpty(unitName))
+            {
+                GameObject unitPrefab = UnlockedUnits.Find(u => u.name == unitName);
+                if (unitPrefab != null)
+                {
+                    Debug.Log($"Assigning unit '{unitName}' to slot {i}");
+                    dropSlot.AssignUnitToSlot(unitPrefab);
+                    // Remove the unit's button from the unitSelectionGrid
+                    foreach (Transform child in unitSelectionGrid)
+                    {
+                        Debug.Log($"Checking child: {child.name}");
+                        DraggableUnit drag = child.GetComponent<DraggableUnit>();
+                        if (drag != null && drag.unitPrefab.name == unitName)
+                        {
+                            Destroy(child.gameObject);
+                            break;
+                        }
+                    }
+                    
+                }
+                else
+                {
+                    // dropSlot.RemoveUnit();
+                }
+            }
+            else
+            {
+                // dropSlot.RemoveUnit();
+            }
+        }
+    }
     public void BuyUnit(string name)
     {
         GameObject unitToBuy = availableUnits.Find(u => u.name == name);
@@ -165,7 +273,8 @@ public class SelectionScreenManager : MonoBehaviour
         }
 
         Debug.Log($"Buying unit: {name}");
-        
+        FirebaseUpdater.Instance.AddUnit(unitToBuy.name);
+
         if (unitToBuy != null)
         {
             availableUnits.Remove(unitToBuy);
@@ -318,7 +427,7 @@ public class SelectionScreenManager : MonoBehaviour
     {
         Debug.Log($"Re-adding unit to grid: {unit.name}");
         if (unit == null) return;
-        
+
         GameObject btn = Instantiate(unitButtonPrefab, unitSelectionGrid);
 
         Image btnImage = btn.GetComponent<Image>();

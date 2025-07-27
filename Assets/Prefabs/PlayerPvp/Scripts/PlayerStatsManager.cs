@@ -29,6 +29,7 @@ public class PlayerStatsManager : MonoBehaviour
     // Placeholder for future: units owned and their levels
     public List<string> OwnedUnits = new List<string>();
     public List<int> OwnedUnitsLevels = new List<int>();
+    public List<string> LoadOut = new List<string>();
 
     // Properties for accessing and modifying stats
     public string PlayerName
@@ -90,6 +91,7 @@ public class PlayerStatsManager : MonoBehaviour
         if (currentCoins >= amount)
         {
             CurrentCoins -= amount;
+            FirebaseUpdater.Instance.UpdateUserGold(currentCoins);
             return true;
         }
         return false;
@@ -98,6 +100,7 @@ public class PlayerStatsManager : MonoBehaviour
     public void LevelUp()
     {
         PlayerLevel++;
+        FirebaseUpdater.Instance.UpdateUserLevel(playerLevel);
     }
 
     public void SetLevel(int level)
@@ -134,6 +137,9 @@ public class PlayerStatsManager : MonoBehaviour
             // Set owned units from UserDataManager
             OwnedUnits = UserDataManager.Instance.OwnedUnits;
             OwnedUnitsLevels = UserDataManager.Instance.OwnedUnitsLevels;
+            LoadOut = UserDataManager.Instance.LoadOut;
+
+
 
             // Add owned units to UnlockedUnits in SelectionScreenManager if not already present
             if (SelectionScreenManager.Instance != null)
@@ -171,7 +177,21 @@ public class PlayerStatsManager : MonoBehaviour
                             Debug.LogWarning($"Prefab for unit '{unitName}' not found in AvailableUnits.");
                         }
                     }
+
                 }
+                // List<string> loadoutForSlots = new List<string>();
+                // for (int i = 0; i < 6; i++)
+                // {
+                //     if (i < LoadOut.Count)
+                //         loadoutForSlots.Add(LoadOut[i]);
+                //     else
+                //         loadoutForSlots.Add("");
+                // }
+                // if (SelectionScreenManager.Instance != null)
+                // {
+                //     Debug.Log("Assigning units to slots: " + string.Join(", ", loadoutForSlots));
+                //     SelectionScreenManager.Instance.AssignUnitsToSlots(loadoutForSlots);
+                // }
             }
             else
             {

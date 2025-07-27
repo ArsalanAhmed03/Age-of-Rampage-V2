@@ -20,6 +20,8 @@ public class databaseManager : MonoBehaviour
         public int Level;
         public List<string> OwnedUnits;
         public List<int> OwnedUnitsLevels;
+        public List<string> LoadOut;
+
 
         public User() { }
 
@@ -33,6 +35,7 @@ public class databaseManager : MonoBehaviour
             Level = level;
             OwnedUnits = ownedUnits;
             OwnedUnitsLevels = ownedUnitsLevels;
+            LoadOut = ownedUnits;
         }
     }
 
@@ -192,8 +195,8 @@ public class databaseManager : MonoBehaviour
             }
 
             // Set user data in DB using UID
-            List<string> defaultUnits = new List<string> { "CraneRon", "KenDuong", "Ronny-V", "TrevorAdam" };
-            List<int> defaultUnitsLevels = new List<int> { 1, 1, 1, 1 };
+            List<string> defaultUnits = new List<string> { "CraneRon", "KenDuong", "Ronny-V" };
+            List<int> defaultUnitsLevels = new List<int> { 1, 1, 1 };
 
             User newUser = new User(name, password, email, int.Parse(age), 100, 1, defaultUnits, defaultUnitsLevels);
 
@@ -252,6 +255,7 @@ public class databaseManager : MonoBehaviour
         UserDataManager.Instance.Level = user.Level;
         UserDataManager.Instance.OwnedUnits = user.OwnedUnits;
         UserDataManager.Instance.OwnedUnitsLevels = user.OwnedUnitsLevels;
+        UserDataManager.Instance.LoadOut = user.LoadOut;
 
         UnityEngine.SceneManagement.SceneManager.LoadScene("Pvp");
     }

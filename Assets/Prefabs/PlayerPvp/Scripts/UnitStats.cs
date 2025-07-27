@@ -68,6 +68,7 @@ public class UnitStats : MonoBehaviour
             if (PlayerStatsManager.Instance.SpendCoins(UpgradeCost))
             {
                 currentLevel++;
+                FirebaseUpdater.Instance.UpdateUnitLevel(gameObject.name, currentLevel);
                 Debug.Log($"{name} leveled up to {currentLevel}");
                 ResetHP(); // Optionally restore HP on level up
 

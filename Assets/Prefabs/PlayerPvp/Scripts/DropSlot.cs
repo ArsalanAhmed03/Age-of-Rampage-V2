@@ -36,7 +36,16 @@ public class DropSlot : MonoBehaviour, IDropHandler
         DraggableUnit dragged = eventData.pointerDrag?.GetComponent<DraggableUnit>();
         if (dragged == null) return;
 
-        assignedPrefab = dragged.unitPrefab;
+        AssignUnitToSlot(dragged.unitPrefab);
+
+        // Destroy dragged button
+        dragged.DestroyDragPreview();
+        Destroy(dragged.gameObject);
+    }
+
+    public void AssignUnitToSlot(GameObject unitPrefab)
+    {
+        assignedPrefab = unitPrefab;
         LoadoutData.selectedUnits[slotIndex] = assignedPrefab;
 
         // Set icon
@@ -49,8 +58,6 @@ public class DropSlot : MonoBehaviour, IDropHandler
             AreanaSlotImage.color = Color.white;
         }
 
-
-
         if (removeButton != null)
             removeButton.gameObject.SetActive(true);
 
@@ -60,15 +67,12 @@ public class DropSlot : MonoBehaviour, IDropHandler
         {
             RemoveUnit();
         });
-
-        // Destroy dragged button
-        dragged.DestroyDragPreview();
-        Destroy(dragged.gameObject);
     }
 
     public void RemoveUnit()
     {
         if (assignedPrefab == null) return;
+        Debug.Log($"Removing unit from slot {slotIndex}: {assignedPrefab.name}");
 
         LoadoutData.selectedUnits[slotIndex] = null;
 

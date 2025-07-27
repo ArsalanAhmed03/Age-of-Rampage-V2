@@ -10,6 +10,7 @@ public class UserDataManager : MonoBehaviour
     public int Level;
     public List<string> OwnedUnits = new List<string>();
     public List<int> OwnedUnitsLevels = new List<int>();
+    public List<string> LoadOut = new List<string>();
 
 
     void Awake()
@@ -23,5 +24,10 @@ public class UserDataManager : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject); // Persist across scenes
         }
+    }
+
+    public int GetUnitIndexByName(string unitName)
+    {
+        return OwnedUnits.IndexOf(unitName);
     }
 }

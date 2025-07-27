@@ -3568,6 +3568,8 @@ MonoBehaviour:
   Gold: 0
   Level: 0
   OwnedUnits: []
+  OwnedUnitsLevels: 
+  LoadOut: []
 --- !u!4 &996215649
 Transform:
   m_ObjectHideFlags: 0
