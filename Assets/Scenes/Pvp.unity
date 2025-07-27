@@ -3632,6 +3632,8 @@ MonoBehaviour:
   currentCoins: 1000
   playerLevelText: {fileID: 1430750530}
   coinsText: {fileID: 1405142582}
+  OwnedUnits: []
+  OwnedUnitsLevels: 
 --- !u!1 &673994143
 GameObject:
   m_ObjectHideFlags: 0
@@ -3700,10 +3702,10 @@ MonoBehaviour:
   - {fileID: 8845373745087624746, guid: 15451ebc8c44a334d9372998721b340d, type: 3}
   - {fileID: 2667064324438211130, guid: 698cd8608fe8a4240b1fb66a0cc8006f, type: 3}
   - {fileID: 4777254194347893091, guid: 7ffdae65b6040764c9e47e396b5ca6b4, type: 3}
-  UnlockedUnits:
   - {fileID: 944488905935073372, guid: 9f7732e0b9e3a7a40ad4c7eca6623dc5, type: 3}
   - {fileID: 6248882066964672192, guid: 53093ca8de92fd44e8eb9560bc1dcc02, type: 3}
   - {fileID: 6420260346434141204, guid: 38700d097e223804b954c7ae03719481, type: 3}
+  UnlockedUnits: []
   frontlineCountText: {fileID: 0}
   backlineCountText: {fileID: 0}
   UpgradeScreenUI: {fileID: 1785685025}
