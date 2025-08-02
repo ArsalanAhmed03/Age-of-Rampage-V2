@@ -44,6 +44,7 @@ public class PlayerStatsManager : MonoBehaviour
         set
         {
             playerLevel = value;
+            FirebaseUpdater.Instance.UpdateUserLevel(playerLevel);
             UpdateLevelUI();
         }
     }
@@ -54,6 +55,7 @@ public class PlayerStatsManager : MonoBehaviour
         set
         {
             currentCoins = value;
+            FirebaseUpdater.Instance.UpdateUserGold(currentCoins);
             UpdateCoinsUI();
         }
     }
@@ -91,7 +93,6 @@ public class PlayerStatsManager : MonoBehaviour
         if (currentCoins >= amount)
         {
             CurrentCoins -= amount;
-            FirebaseUpdater.Instance.UpdateUserGold(currentCoins);
             return true;
         }
         return false;
@@ -100,7 +101,6 @@ public class PlayerStatsManager : MonoBehaviour
     public void LevelUp()
     {
         PlayerLevel++;
-        FirebaseUpdater.Instance.UpdateUserLevel(playerLevel);
     }
 
     public void SetLevel(int level)

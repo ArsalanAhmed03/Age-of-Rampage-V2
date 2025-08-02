@@ -92,7 +92,9 @@ public class BattleSystem : MonoBehaviour
         // Spawn Enemy Frontline
         for (int i = 0; i < enemyFrontPrefabs.Count && i < enemyFrontSpawns.Length; i++)
         {
-            GameObject go = Instantiate(enemyFrontPrefabs[i], enemyFrontSpawns[i].position, Quaternion.identity);
+            GameObject unitPrefab = enemyFrontPrefabs[i];
+            if (unitPrefab == null) continue;
+            GameObject go = Instantiate(unitPrefab, enemyFrontSpawns[i].position, Quaternion.identity);
             UnitCombatHandler handler = go.GetComponent<UnitCombatHandler>();
             enemyHealthTotal += handler.unitStats.GetStats().HP;
             handler.IsFrontline = true;
@@ -102,7 +104,9 @@ public class BattleSystem : MonoBehaviour
         // Spawn Enemy Backline
         for (int i = 0; i < enemyBackPrefabs.Count && i < enemyBackSpawns.Length; i++)
         {
-            GameObject go = Instantiate(enemyBackPrefabs[i], enemyBackSpawns[i].position, Quaternion.identity);
+            GameObject unitPrefab = enemyBackPrefabs[i];
+            if (unitPrefab == null) continue;
+            GameObject go = Instantiate(unitPrefab, enemyBackSpawns[i].position, Quaternion.identity);
             UnitCombatHandler handler = go.GetComponent<UnitCombatHandler>();
             enemyHealthTotal += handler.unitStats.GetStats().HP;
             handler.IsFrontline = false;
@@ -251,7 +255,14 @@ public class BattleSystem : MonoBehaviour
         if (playerFrontline.Count + playerBackline.Count == 0)
         {
             Debug.Log("Enemy team wins!");
-            PlayerStatsManager.Instance.PlayerLevel--;
+            if (PlayerStatsManager.Instance.PlayerLevel > 1)
+            {
+                PlayerStatsManager.Instance.PlayerLevel--;
+            }
+
+            // Update enemy level when they win
+            UpdateEnemyLevel(1);
+
             lostScreen.SetActive(true);
             fightEnded = true;
             return;
@@ -260,6 +271,10 @@ public class BattleSystem : MonoBehaviour
         {
             Debug.Log("Player team wins!");
             PlayerStatsManager.Instance.PlayerLevel++;
+
+            // Update enemy level when they lose
+            UpdateEnemyLevel(-1);
+
             wonScreen.SetActive(true);
             fightEnded = true;
             return;
@@ -267,6 +282,32 @@ public class BattleSystem : MonoBehaviour
 
         if (currentTurnIndex >= turnQueue.Count)
             currentTurnIndex = 0;
+    }
+
+    // Method to update the enemy's level based on battle outcome
+    private void UpdateEnemyLevel(int levelChange)
+    {
+        Debug.Log($"UpdateEnemyLevel called with levelChange: {levelChange}");
+
+        // Find the EnemyScreenManager in the scene
+        EnemyScreenManager enemyManager = FindFirstObjectByType<EnemyScreenManager>();
+
+        if (enemyManager != null)
+        {
+            Debug.Log($"Found EnemyScreenManager. HasSelectedOpponent: {enemyManager.HasSelectedOpponent}");
+            if (enemyManager.HasSelectedOpponent)
+            {
+                enemyManager.UpdateSelectedOpponentLevel(levelChange);
+            }
+            else
+            {
+                Debug.LogWarning("EnemyScreenManager found but no selected opponent to update level for");
+            }
+        }
+        else
+        {
+            Debug.LogError("EnemyScreenManager not found in scene");
+        }
     }
 
 
@@ -348,7 +389,13 @@ public class BattleSystem : MonoBehaviour
             wonScreen.SetActive(false);
         if (lostScreen != null)
             lostScreen.SetActive(false);
-        
+
+        EnemyScreenManager enemyManager = FindFirstObjectByType<EnemyScreenManager>();
+        if (enemyManager != null)
+        {
+            enemyManager.ClearSelectedOpponent();
+            enemyManager.ShowArenaStartScreen();
+        }
         SelectionScreenManager.Instance.OnBattleEnded();
     }
 

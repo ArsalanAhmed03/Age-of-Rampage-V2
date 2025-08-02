@@ -9,6 +9,9 @@ public class FirebaseUpdater : MonoBehaviour
 {
     public static FirebaseUpdater Instance { get; private set; }
 
+    // Event to notify when opponents data is ready
+    public System.Action<List<OpponentData>> OnOpponentsDataReady;
+
     private void OnEnable()
     {
         if (Instance != null && Instance != this)
@@ -59,6 +62,7 @@ public class FirebaseUpdater : MonoBehaviour
         else
         {
             Debug.Log("User logged in: " + user.UserId);
+            GetAllOpponents(); // Fetch opponents when user is logged in
         }
     }
 
@@ -259,7 +263,7 @@ public class FirebaseUpdater : MonoBehaviour
 
         UpdateOwnedUnits(UserDataManager.Instance.OwnedUnits, UserDataManager.Instance.OwnedUnitsLevels);
     }
-    
+
     public void UpdateLoadout(List<string> loadout)
     {
         if (!IsUserValid()) return;
@@ -286,6 +290,161 @@ public class FirebaseUpdater : MonoBehaviour
             {
                 Debug.LogError("Failed to update loadout: " + task.Exception?.GetBaseException());
             }
+        });
+    }
+
+    [System.Serializable]
+    public class OpponentData
+    {
+        public string userId;
+        public string username;
+        public int level;
+        public List<string> loadout;
+        public List<int> loadoutLevels;
+
+        public OpponentData(string userId, string username, int level, List<string> loadout, List<int> loadoutLevels)
+        {
+            this.userId = userId;
+            this.username = username;
+            this.level = level;
+            this.loadout = loadout ?? new List<string>();
+            this.loadoutLevels = loadoutLevels ?? new List<int>();
+        }
+    }
+
+    public List<OpponentData> opponents = new List<OpponentData>();
+
+    public void GetAllOpponents(int maxResults = 6)
+    {
+        if (!IsUserValid()) return;
+
+        dbRef.Child("users").GetValueAsync().ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted)
+            {
+                Debug.LogError("Failed to fetch users: " + task.Exception?.GetBaseException());
+                return;
+            }
+
+            if (task.IsCanceled)
+            {
+                Debug.LogError("Fetch users task was canceled");
+                return;
+            }
+
+            DataSnapshot snapshot = task.Result;
+            if (!snapshot.Exists)
+            {
+                Debug.LogWarning("No users found in database");
+                return;
+            }
+
+
+            foreach (DataSnapshot userSnapshot in snapshot.Children)
+            {
+                // Check if we've reached the maximum number of results
+                if (opponents.Count >= maxResults)
+                    break;
+
+                string userId = userSnapshot.Key;
+
+                // Skip the current logged-in user
+                if (userId == user.UserId)
+                    continue;
+
+                try
+                {
+                    // Get user data
+                    string username = userSnapshot.Child("Username").Value?.ToString() ?? "Unknown";
+                    int level = 1;
+
+                    if (userSnapshot.Child("Level").Value != null)
+                    {
+                        if (int.TryParse(userSnapshot.Child("Level").Value.ToString(), out int parsedLevel))
+                        {
+                            level = parsedLevel;
+                        }
+                    }
+
+                    // Get loadout
+                    List<string> loadout = new List<string>();
+                    DataSnapshot loadoutSnapshot = userSnapshot.Child("LoadOut");
+                    if (loadoutSnapshot.Exists)
+                    {
+                        foreach (DataSnapshot loadoutItem in loadoutSnapshot.Children)
+                        {
+                            string unitName = loadoutItem.Value?.ToString() ?? "";
+                            loadout.Add(unitName);
+                        }
+                    }
+
+                    // Get loadout levels by matching with owned units
+                    List<int> loadoutLevels = new List<int>();
+                    List<string> ownedUnits = new List<string>();
+                    List<int> ownedUnitsLevels = new List<int>();
+
+                    // Get owned units
+                    DataSnapshot ownedUnitsSnapshot = userSnapshot.Child("OwnedUnits");
+                    if (ownedUnitsSnapshot.Exists)
+                    {
+                        foreach (DataSnapshot unitItem in ownedUnitsSnapshot.Children)
+                        {
+                            string unitName = unitItem.Value?.ToString() ?? "";
+                            ownedUnits.Add(unitName);
+                        }
+                    }
+
+                    // Get owned units levels
+                    DataSnapshot ownedUnitsLevelsSnapshot = userSnapshot.Child("OwnedUnitsLevels");
+                    if (ownedUnitsLevelsSnapshot.Exists)
+                    {
+                        foreach (DataSnapshot levelItem in ownedUnitsLevelsSnapshot.Children)
+                        {
+                            if (int.TryParse(levelItem.Value?.ToString(), out int unitLevel))
+                            {
+                                ownedUnitsLevels.Add(unitLevel);
+                            }
+                            else
+                            {
+                                ownedUnitsLevels.Add(1); // Default level
+                            }
+                        }
+                    }
+
+                    // Match loadout units with their levels
+                    for (int i = 0; i < loadout.Count; i++)
+                    {
+                        string loadoutUnit = loadout[i];
+                        int unitIndex = ownedUnits.IndexOf(loadoutUnit);
+
+                        if (unitIndex >= 0 && unitIndex < ownedUnitsLevels.Count)
+                        {
+                            loadoutLevels.Add(ownedUnitsLevels[unitIndex]);
+                        }
+                        else
+                        {
+                            loadoutLevels.Add(1); // Default level if unit not found
+                        }
+                    }
+
+                    OpponentData opponent = new OpponentData(userId, username, level, loadout, loadoutLevels);
+                    opponents.Add(opponent);
+
+                    Debug.Log($"Found opponent: {username} (Level {level}) - Loadout: {string.Join(", ", loadout)} - Levels: {string.Join(", ", loadoutLevels)}");
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"Error parsing user data for {userId}: {e.Message}");
+                }
+            }
+
+            Debug.Log($"Total opponents found: {opponents.Count} (limited to {maxResults} max results)");
+
+            // Notify listeners that opponents data is ready
+            OnOpponentsDataReady?.Invoke(opponents);
+
+            // Data is now available in the 'opponents' list
+            // You can process this data as needed
         });
     }
 }
