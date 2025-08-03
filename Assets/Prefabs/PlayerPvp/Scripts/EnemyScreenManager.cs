@@ -228,13 +228,18 @@ public class EnemyScreenManager : MonoBehaviour
                 }
 
                 // Set first unit image (only if opponent has units)
-                if (opponentSlotImages[i] != null && opponent.loadout.Count > 0 && !string.IsNullOrEmpty(opponent.loadout[0]))
+                // if (opponentSlotImages[i] != null && opponent.loadout.Count > 0 && !string.IsNullOrEmpty(opponent.loadout[0]))
+                // {
+                //     Sprite unitSprite = GetUnitSprite(opponent.loadout[0]);
+                //     if (unitSprite != null)
+                //     {
+                //         opponentSlotImages[i].sprite = unitSprite;
+                //     }
+                // }
+
+                if (opponentSlotImages[i] != null && !string.IsNullOrEmpty(opponent.profilePictureUrl))
                 {
-                    Sprite unitSprite = GetUnitSprite(opponent.loadout[0]);
-                    if (unitSprite != null)
-                    {
-                        opponentSlotImages[i].sprite = unitSprite;
-                    }
+                    StartCoroutine(LoadProfilePicture(opponent.profilePictureUrl, opponentSlotImages[i]));
                 }
 
                 // Enable the slot
@@ -255,6 +260,29 @@ public class EnemyScreenManager : MonoBehaviour
         }
     }
 
+
+    private System.Collections.IEnumerator LoadProfilePicture(string imageUrl, Image targetImage)
+    {
+        using (UnityEngine.Networking.UnityWebRequest request = UnityEngine.Networking.UnityWebRequestTexture.GetTexture(imageUrl))
+        {
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityEngine.Networking.UnityWebRequest.Result.Success)
+            {
+                Texture2D texture = ((UnityEngine.Networking.DownloadHandlerTexture)request.downloadHandler).texture;
+                if (texture != null)
+                {
+                    Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), Vector2.one * 0.5f);
+                    targetImage.sprite = sprite;
+                    targetImage.color = Color.white;
+                }
+            }
+            else
+            {
+                Debug.LogWarning("Failed to load profile picture: " + request.error);
+            }
+        }
+    }
     public void ShowSelectedEnemy(int opponentIndex)
     {
         if (opponentIndex < 0 || opponentIndex >= currentOpponents.Count)

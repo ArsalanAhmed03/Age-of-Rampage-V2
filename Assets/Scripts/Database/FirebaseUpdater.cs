@@ -301,14 +301,16 @@ public class FirebaseUpdater : MonoBehaviour
         public int level;
         public List<string> loadout;
         public List<int> loadoutLevels;
+        public string profilePictureUrl;
 
-        public OpponentData(string userId, string username, int level, List<string> loadout, List<int> loadoutLevels)
+        public OpponentData(string userId, string username, int level, List<string> loadout, List<int> loadoutLevels, string profilePictureUrl)
         {
             this.userId = userId;
             this.username = username;
             this.level = level;
             this.loadout = loadout ?? new List<string>();
             this.loadoutLevels = loadoutLevels ?? new List<int>();
+            this.profilePictureUrl = profilePictureUrl;
         }
     }
 
@@ -427,7 +429,10 @@ public class FirebaseUpdater : MonoBehaviour
                         }
                     }
 
-                    OpponentData opponent = new OpponentData(userId, username, level, loadout, loadoutLevels);
+                    // Get profile picture URL
+                    string profilePictureUrl = userSnapshot.Child("ProfilePictureURL").Value?.ToString() ?? "";
+
+                    OpponentData opponent = new OpponentData(userId, username, level, loadout, loadoutLevels, profilePictureUrl);
                     opponents.Add(opponent);
 
                     Debug.Log($"Found opponent: {username} (Level {level}) - Loadout: {string.Join(", ", loadout)} - Levels: {string.Join(", ", loadoutLevels)}");

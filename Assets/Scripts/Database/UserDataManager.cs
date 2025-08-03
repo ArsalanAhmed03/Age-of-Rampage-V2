@@ -11,6 +11,7 @@ public class UserDataManager : MonoBehaviour
     public List<string> OwnedUnits = new List<string>();
     public List<int> OwnedUnitsLevels = new List<int>();
     public List<string> LoadOut = new List<string>();
+    public string ProfilePictureURL;
 
 
     void Awake()

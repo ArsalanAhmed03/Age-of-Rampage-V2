@@ -1,6 +1,9 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using UnityEngine.UI;
+using UnityEngine.Networking;
 
 public class PlayerStatsManager : MonoBehaviour
 {
@@ -21,10 +24,13 @@ public class PlayerStatsManager : MonoBehaviour
     [SerializeField] private string playerName = "Player1";
     [SerializeField] private int playerLevel = 1;
     [SerializeField] private int currentCoins = 1000;
+    [SerializeField] private string profilePictureURL = ""; // Add this field
 
     // References for displaying player level and coins using TextMeshPro
     [SerializeField] private TextMeshProUGUI playerLevelText;
     [SerializeField] private TextMeshProUGUI coinsText;
+    [SerializeField] private TextMeshProUGUI PlayerNameText;
+    [SerializeField] private Image profilePicture;
 
     // Placeholder for future: units owned and their levels
     public List<string> OwnedUnits = new List<string>();
@@ -35,7 +41,11 @@ public class PlayerStatsManager : MonoBehaviour
     public string PlayerName
     {
         get => playerName;
-        set => playerName = value;
+        set
+        {
+            playerName = value;
+            UpdatePlayerNameUI(); // Update UI when name changes
+        }
     }
 
     public int PlayerLevel
@@ -57,6 +67,47 @@ public class PlayerStatsManager : MonoBehaviour
             currentCoins = value;
             FirebaseUpdater.Instance.UpdateUserGold(currentCoins);
             UpdateCoinsUI();
+        }
+    }
+
+    public string ProfilePictureURL
+    {
+        get => profilePictureURL;
+        set
+        {
+            profilePictureURL = value; // Fixed: was causing infinite recursion
+            if (profilePicture != null && !string.IsNullOrEmpty(value))
+            {
+                StartCoroutine(LoadProfilePictureFromURL(value));
+            }
+        }
+    }
+
+    private IEnumerator LoadProfilePictureFromURL(string imageUrl)
+    {
+        if (string.IsNullOrEmpty(imageUrl)) yield break;
+
+        using (UnityWebRequest request = UnityWebRequestTexture.GetTexture(imageUrl))
+        {
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                Texture2D texture = ((DownloadHandlerTexture)request.downloadHandler).texture;
+                Sprite profileSprite = Sprite.Create(texture,
+                    new Rect(0, 0, texture.width, texture.height),
+                    new Vector2(0.5f, 0.5f));
+
+                if (profilePicture != null)
+                {
+                    profilePicture.sprite = profileSprite;
+                    profilePicture.gameObject.SetActive(true);
+                }
+            }
+            else
+            {
+                Debug.LogError("Failed to load profile picture: " + request.error);
+            }
         }
     }
 
@@ -110,7 +161,7 @@ public class PlayerStatsManager : MonoBehaviour
 
     public void SetPlayerName(string name)
     {
-        playerName = name;
+        PlayerName = name; // Use the property instead of direct field assignment
     }
 
     private void UpdateLevelUI()
@@ -125,21 +176,27 @@ public class PlayerStatsManager : MonoBehaviour
             coinsText.text = $"Coins: {currentCoins}";
     }
 
+    private void UpdatePlayerNameUI()
+    {
+        if (PlayerNameText != null)
+            PlayerNameText.text = playerName;
+    }
+
     void Start()
     {
         // Pull data from UserDataManager singleton
         if (UserDataManager.Instance != null)
         {
-            playerName = UserDataManager.Instance.UserName;
-            playerLevel = UserDataManager.Instance.Level;
-            currentCoins = UserDataManager.Instance.Gold;
+            // Use properties to ensure UI updates
+            PlayerName = UserDataManager.Instance.UserName;
+            PlayerLevel = UserDataManager.Instance.Level;
+            CurrentCoins = UserDataManager.Instance.Gold;
+            ProfilePictureURL = UserDataManager.Instance.ProfilePictureURL;
 
             // Set owned units from UserDataManager
             OwnedUnits = UserDataManager.Instance.OwnedUnits;
             OwnedUnitsLevels = UserDataManager.Instance.OwnedUnitsLevels;
             LoadOut = UserDataManager.Instance.LoadOut;
-
-
 
             // Add owned units to UnlockedUnits in SelectionScreenManager if not already present
             if (SelectionScreenManager.Instance != null)
@@ -177,21 +234,7 @@ public class PlayerStatsManager : MonoBehaviour
                             Debug.LogWarning($"Prefab for unit '{unitName}' not found in AvailableUnits.");
                         }
                     }
-
                 }
-                // List<string> loadoutForSlots = new List<string>();
-                // for (int i = 0; i < 6; i++)
-                // {
-                //     if (i < LoadOut.Count)
-                //         loadoutForSlots.Add(LoadOut[i]);
-                //     else
-                //         loadoutForSlots.Add("");
-                // }
-                // if (SelectionScreenManager.Instance != null)
-                // {
-                //     Debug.Log("Assigning units to slots: " + string.Join(", ", loadoutForSlots));
-                //     SelectionScreenManager.Instance.AssignUnitsToSlots(loadoutForSlots);
-                // }
             }
             else
             {
@@ -203,10 +246,27 @@ public class PlayerStatsManager : MonoBehaviour
             Debug.LogWarning("UserDataManager.Instance is null! Did you forget to log in?");
         }
 
-        // Update UI
+        // Force UI updates (backup in case properties didn't trigger)
         UpdateLevelUI();
         UpdateCoinsUI();
+        UpdatePlayerNameUI();
+
+        // Load profile picture if available
+        if (!string.IsNullOrEmpty(ProfilePictureURL) && profilePicture != null)
+        {
+            StartCoroutine(LoadProfilePictureFromURL(ProfilePictureURL));
+        }
     }
 
-
+    public void RefreshAllUI()
+    {
+        UpdateLevelUI();
+        UpdateCoinsUI();
+        UpdatePlayerNameUI();
+        
+        if (!string.IsNullOrEmpty(ProfilePictureURL) && profilePicture != null)
+        {
+            StartCoroutine(LoadProfilePictureFromURL(ProfilePictureURL));
+        }
+    }
 }
