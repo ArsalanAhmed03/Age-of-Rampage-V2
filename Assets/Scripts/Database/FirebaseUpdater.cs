@@ -234,7 +234,7 @@ public class FirebaseUpdater : MonoBehaviour
     {
         if (user == null)
         {
-            Debug.LogError("No user logged in. Cannot perform Firebase operation.");
+            // Debug.LogError("No user logged in. Cannot perform Firebase operation.");
             return false;
         }
         return true;
@@ -351,7 +351,7 @@ public class FirebaseUpdater : MonoBehaviour
                 string userId = userSnapshot.Key;
 
                 // Skip the current logged-in user
-                if (userId == user.UserId)
+                if (UserDataManager.Instance.isLoggedIn && userId == user.UserId)
                     continue;
 
                 try

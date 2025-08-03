@@ -239,6 +239,7 @@ public class EnemyScreenManager : MonoBehaviour
 
                 if (opponentSlotImages[i] != null && !string.IsNullOrEmpty(opponent.profilePictureUrl))
                 {
+                    Debug.Log($"Loading profile picture for {opponent.username}");
                     StartCoroutine(LoadProfilePicture(opponent.profilePictureUrl, opponentSlotImages[i]));
                 }
 

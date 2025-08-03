@@ -70,15 +70,20 @@ public class databaseManager : MonoBehaviour
     [Header("Screen Panels")]
     public GameObject loginPanel;
     public GameObject signupPanel;
+    public GameObject guestLoginPanel;
 
     [Header("Switch Buttons")]
     public Button switchToLoginButton;
     public Button switchToSignupButton;
+    public Button switchToGuestLoginButton;
 
     [Header("Login UI")]
     public TMP_InputField loginEmailInput;
     public TMP_InputField loginPasswordInput;
     public Button loginButton;
+
+    [Header("Guest UI")]
+    public Button guestLoginButton;
 
     [Header("Signup UI")]
     public TMP_InputField signupUsernameInput;
@@ -127,10 +132,12 @@ public class databaseManager : MonoBehaviour
     {
         loginButton.onClick.AddListener(Login);
         signupButton.onClick.AddListener(Register);
+        guestLoginButton.onClick.AddListener(GuestLogin);
         switchToLoginButton.onClick.AddListener(SwitchToLoginScreen);
         switchToSignupButton.onClick.AddListener(SwitchToSignupScreen);
+        switchToGuestLoginButton.onClick.AddListener(SwitchToGuestLoginScreen);
         selectProfilePictureButton.onClick.AddListener(SelectProfilePicture);
-
+        SwitchToSignupScreen();
         ClearUI();
     }
 
@@ -298,8 +305,6 @@ public class databaseManager : MonoBehaviour
         byte[] imageData = selectedImageTexture.EncodeToPNG();
         WWWForm form = new WWWForm();
 
-        cloudinaryCloudName = "dtl29wsay";
-        cloudinaryUploadPreset = "profile_pictures";
         form.AddField("upload_preset", cloudinaryUploadPreset);
         form.AddBinaryData("file", imageData, "profile_picture.png", "image/png");
 
@@ -373,6 +378,29 @@ public class databaseManager : MonoBehaviour
                 Debug.LogError("Failed to load profile picture: " + request.error);
             }
         }
+    }
+
+    public void GuestLogin()
+    {
+        SetButtonsInteractable(false);
+        if (UserDataManager.Instance == null)
+        {
+            Debug.LogError("UserDataManager.Instance is null!");
+            return;
+        }
+        User guestUser = new User(
+            "GuestUser",
+            "guest_password",
+            "<guest_email>",
+            18, // example guest age
+            500,
+            1,
+            new() { "CraneRon", "KenDuong", "Ronny-V" },
+            new() { 1, 1, 1 },
+            "<guest_profile_picture_url>"
+        );
+        UpdateUserDataManager(guestUser, false);
+        StartCoroutine(LoadGameSceneAfterDelay());
     }
 
     public void Login()
@@ -624,17 +652,18 @@ public class databaseManager : MonoBehaviour
         StartCoroutine(LoadGameSceneAfterDelay());
     }
 
-    private void UpdateUserDataManager(User user)
+    private void UpdateUserDataManager(User user, bool isLoggedIn = true)
     {
         UserDataManager.Instance.UserName = user.Username;
         UserDataManager.Instance.Gold = user.Gold;
         UserDataManager.Instance.Level = user.Level;
-        UserDataManager.Instance.OwnedUnits = user.OwnedUnits ?? new List<string>();
-        UserDataManager.Instance.OwnedUnitsLevels = user.OwnedUnitsLevels ?? new List<int>();
-        UserDataManager.Instance.LoadOut = user.LoadOut ?? new List<string>();
+        UserDataManager.Instance.OwnedUnits = user.OwnedUnits ?? new List<string> { "CraneRon", "KenDuong", "Ronny-V" };
+        UserDataManager.Instance.OwnedUnitsLevels = user.OwnedUnitsLevels ?? new List<int> { 1, 1, 1 };
+        UserDataManager.Instance.LoadOut = user.LoadOut ?? new List<string> { "CraneRon", "KenDuong", "Ronny-V" };
         UserDataManager.Instance.ProfilePictureURL = user.ProfilePictureURL ?? "";
+        UserDataManager.Instance.isLoggedIn = isLoggedIn;
     }
-
+    
     private IEnumerator LoadGameSceneAfterDelay()
     {
         yield return new WaitForSeconds(0.5f);
@@ -648,6 +677,8 @@ public class databaseManager : MonoBehaviour
         if (switchToLoginButton != null) switchToLoginButton.interactable = interactable;
         if (switchToSignupButton != null) switchToSignupButton.interactable = interactable;
         if (selectProfilePictureButton != null) selectProfilePictureButton.interactable = interactable;
+        if (switchToGuestLoginButton != null) switchToGuestLoginButton.interactable = interactable;
+        if (guestLoginButton != null) guestLoginButton.interactable = interactable;
     }
 
     private string GetFirebaseErrorMessage(System.AggregateException exception)
@@ -700,6 +731,7 @@ public class databaseManager : MonoBehaviour
     {
         loginPanel.SetActive(true);
         signupPanel.SetActive(false);
+        guestLoginPanel.SetActive(false);
         errorText.text = "Please enter your login credentials.";
         ClearInputFields();
     }
@@ -708,10 +740,20 @@ public class databaseManager : MonoBehaviour
     {
         signupPanel.SetActive(true);
         loginPanel.SetActive(false);
+        guestLoginPanel.SetActive(false);
         errorText.text = "Please fill in your signup details.";
 
         ClearSelectedImage();
         uploadStatusText.text = "";
+        ClearInputFields();
+    }
+
+    private void SwitchToGuestLoginScreen()
+    {
+        guestLoginPanel.SetActive(true);
+        loginPanel.SetActive(false);
+        signupPanel.SetActive(false);
+        errorText.text = "Press Start.";
         ClearInputFields();
     }
 
