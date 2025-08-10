@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 74232a5b9ca98e649a16966f3fc0824b
+guid: fa6013a9abb9a7c47840ac95a640a89a
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -2436823293105008602
-    second: Start-Photoroom_0
+      213: 2872934606451316727
+    second: cropped-cartoonish_medieval_landscape_in_horizontal_orientation_rolling-2025-08-10-065706_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -46,7 +46,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -126,13 +126,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Start-Photoroom_0
+      name: cropped-cartoonish_medieval_landscape_in_horizontal_orientation_rolling-2025-08-10-065706_0
       rect:
         serializedVersion: 2
-        x: 45
-        y: 49
-        width: 1182
-        height: 677
+        x: 0
+        y: 0
+        width: 890
+        height: 501
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -141,8 +141,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 6201412302aae2ed0800000000000000
-      internalID: -2436823293105008602
+      spriteID: 7f715789dc6bed720800000000000000
+      internalID: 2872934606451316727
       vertices: []
       indices: 
       edges: []
@@ -151,7 +151,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 5e97eb03825dee720800000000000000
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -161,7 +161,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Start-Photoroom_0: -2436823293105008602
+      cropped-cartoonish_medieval_landscape_in_horizontal_orientation_rolling-2025-08-10-065706_0: 2872934606451316727
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

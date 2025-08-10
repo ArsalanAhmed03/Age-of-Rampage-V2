@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 74232a5b9ca98e649a16966f3fc0824b
+guid: ae4a84f575e0b3847a0ea742cae31315
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -2436823293105008602
-    second: Start-Photoroom_0
+      213: -8168638880315551705
+    second: Fight_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -126,13 +126,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Start-Photoroom_0
+      name: Fight_0
       rect:
         serializedVersion: 2
-        x: 45
-        y: 49
-        width: 1182
-        height: 677
+        x: 79
+        y: 62
+        width: 1098
+        height: 608
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -141,8 +141,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 6201412302aae2ed0800000000000000
-      internalID: -2436823293105008602
+      spriteID: 720d858b73a23ae80800000000000000
+      internalID: -8168638880315551705
       vertices: []
       indices: 
       edges: []
@@ -161,7 +161,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Start-Photoroom_0: -2436823293105008602
+      Fight_0: -8168638880315551705
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

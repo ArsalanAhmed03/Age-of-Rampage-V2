@@ -9,6 +9,11 @@ using UnityEngine.UI;
 using System.Collections;
 using UnityEngine.Networking;
 using System.IO;
+using System;
+using UnityEngine.Rendering;
+using Unity.Services.Lobbies.Models;
+
+
 
 #if UNITY_EDITOR || UNITY_STANDALONE
 using SFB; // StandaloneFileBrowser for PC testing
@@ -108,25 +113,107 @@ public class databaseManager : MonoBehaviour
     [Header("Messages")]
     public TextMeshProUGUI errorText;
 
+    [Header("AutoLogin")]
+
+    public TextMeshProUGUI AutoLoginStatus;
+
+
     private string selectedImagePath = "";
     private Texture2D selectedImageTexture;
     private User currentUserData;
 
-    private void Awake()
+    // private void Awake()
+    // {
+    //     FirebaseApp.CheckAndFixDependenciesAsync().ContinueWith(task =>
+    //     {
+    //         dependencyStatus = task.Result;
+    //         if (dependencyStatus == DependencyStatus.Available)
+    //         {
+    //             Debug.Log("<color=purple>[databaseManager] Starting Firebase initialization...</color>");
+    //             InitializeFirebase();
+    //             Debug.Log("<color=red>[databaseManager] Firebase dependencies resolved and initializing...</color>");
+    //             UnityEngine.WSA.Application.InvokeOnAppThread(() =>
+    //             {
+    //                 TryAutoLogin();
+    //             }, false);
+    //         }
+    //         else
+    //         {
+    //             Debug.LogError($"Firebase dependencies not resolved: {dependencyStatus}");
+    //         }
+    //     });
+
+    // }
+
+    public void SetUpDataBase()
     {
-        FirebaseApp.CheckAndFixDependenciesAsync().ContinueWith(task =>
-        {
-            dependencyStatus = task.Result;
-            if (dependencyStatus == DependencyStatus.Available)
+        FirebaseApp.CheckAndFixDependenciesAsync()
+            .ContinueWithOnMainThread(task =>
             {
-                InitializeFirebase();
+                dependencyStatus = task.Result;
+                if (dependencyStatus == DependencyStatus.Available)
+                {
+                    Debug.Log("<color=purple>[databaseManager] Starting Firebase initialization...</color>");
+                    InitializeFirebase();
+                    Debug.Log("<color=red>[databaseManager] Firebase dependencies resolved and initializing...</color>");
+                    TryAutoLogin();
+                }
+                else
+                {
+                    Debug.LogError($"Firebase dependencies not resolved: {dependencyStatus}");
+                }
+            });
+    }
+
+    private string savedEmail = "";
+    private string savedPassword = "";
+
+    private string savedUserName = "";
+
+    public bool canAutoLogin = false;
+
+
+    private void TryAutoLogin()
+    {
+        Debug.Log("<color=green>[databaseManager] TryAutoLogin called</color>");
+        try
+        {
+            savedEmail = PlayerPrefs.GetString("SavedEmail", "");
+            savedPassword = PlayerPrefs.GetString("SavedPassword", "");
+            savedUserName = PlayerPrefs.GetString("UserName", "");
+
+
+            if (!string.IsNullOrEmpty(savedEmail) && !string.IsNullOrEmpty(savedPassword))
+            {
+                // Debug.Log("<color=blue>[databaseManager] Saved credentials found. Email: " + savedEmail + "</color>");
+                // StartCoroutine(LoginAsync(savedEmail, savedPassword));\
+                AutoLoginStatus.text = "User Found : " + savedUserName;
+                canAutoLogin = true;
             }
             else
             {
-                Debug.LogError($"Firebase dependencies not resolved: {dependencyStatus}");
+                Debug.Log("<color=blue>[databaseManager] Saved credentials Not found</color>");
+                AutoLoginStatus.text = "No User Found";
+
+                canAutoLogin = false;
             }
-        });
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError("[databaseManager] PlayerPrefs read error: " + ex);
+        }
     }
+
+    public void LoginHelper()
+    {
+        if (string.IsNullOrEmpty(savedEmail) || string.IsNullOrEmpty(savedPassword))
+        {
+            errorText.text = "No saved credentials found.";
+            return;
+        }
+        StartCoroutine(LoginAsync(savedEmail, savedPassword));
+    }
+
 
     private void Start()
     {
@@ -137,7 +224,8 @@ public class databaseManager : MonoBehaviour
         switchToSignupButton.onClick.AddListener(SwitchToSignupScreen);
         switchToGuestLoginButton.onClick.AddListener(SwitchToGuestLoginScreen);
         selectProfilePictureButton.onClick.AddListener(SelectProfilePicture);
-        SwitchToSignupScreen();
+
+        SwitchToLoginScreen();
         ClearUI();
     }
 
@@ -457,6 +545,11 @@ public class databaseManager : MonoBehaviour
         user = loggedInUser;
         Debug.Log($"Login successful: {user.Email}, UID: {user.UserId}");
         errorText.text = "Login successful! Loading data...";
+
+        PlayerPrefs.SetString("SavedEmail", loginEmailInput.text);
+        PlayerPrefs.SetString("SavedPassword", loginPasswordInput.text);
+        PlayerPrefs.SetString("UserName", user.DisplayName ?? user.Email);
+        PlayerPrefs.Save();
     }
 
     public void Register()
@@ -565,6 +658,11 @@ public class databaseManager : MonoBehaviour
             Debug.Log("User data saved successfully!");
             uploadStatusText.text = "Account created successfully!";
 
+            PlayerPrefs.SetString("SavedEmail", email);
+            PlayerPrefs.SetString("SavedPassword", password);
+            PlayerPrefs.SetString("UserName", name);
+            PlayerPrefs.Save();
+
             // Clear selected image after successful signup
             ClearSelectedImage();
             yield return new WaitForSeconds(1f);
@@ -663,7 +761,7 @@ public class databaseManager : MonoBehaviour
         UserDataManager.Instance.ProfilePictureURL = user.ProfilePictureURL ?? "";
         UserDataManager.Instance.isLoggedIn = isLoggedIn;
     }
-    
+
     private IEnumerator LoadGameSceneAfterDelay()
     {
         yield return new WaitForSeconds(0.5f);
@@ -766,5 +864,22 @@ public class databaseManager : MonoBehaviour
         if (signupAgeInput != null) signupAgeInput.text = "";
         if (signupPasswordInput != null) signupPasswordInput.text = "";
         if (signupConfirmPasswordInput != null) signupConfirmPasswordInput.text = "";
+    }
+
+    public void Logout()
+    {
+        Debug.Log("Logging out...");
+        auth.SignOut();
+
+        AutoLoginStatus.text = "No User Found";
+        canAutoLogin = false;
+
+        PlayerPrefs.DeleteKey("SavedEmail");
+        PlayerPrefs.DeleteKey("SavedPassword");
+        PlayerPrefs.DeleteKey("UserName");
+        PlayerPrefs.Save();
+
+        ClearUI();
+        SwitchToLoginScreen();
     }
 }

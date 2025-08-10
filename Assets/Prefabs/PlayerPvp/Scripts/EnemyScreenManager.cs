@@ -12,6 +12,7 @@ public class EnemyScreenManager : MonoBehaviour
 
     [Header("Enemy Selection UI")]
     public Transform EnemySlotParents;
+    public Transform LeaderBoardSlotParents;
 
     [Header("Selected Enemy Details")]
     public TextMeshProUGUI EnemyName;
@@ -23,6 +24,7 @@ public class EnemyScreenManager : MonoBehaviour
 
     // Store the opponents data locally
     private List<FirebaseUpdater.OpponentData> currentOpponents = new List<FirebaseUpdater.OpponentData>();
+    private List<FirebaseUpdater.OpponentData> currentLeaderBoard = new List<FirebaseUpdater.OpponentData>();
     private int selectedOpponentIndex = -1; // Track the currently selected opponent
 
     // Cache frequently accessed components
@@ -30,6 +32,7 @@ public class EnemyScreenManager : MonoBehaviour
     private Image[] opponentSlotImages;
     private TextMeshProUGUI[] opponentSlotTexts;
     private bool isOpponentDataLoaded = false;
+    private bool isLeaderBoardDataLoaded = false;
 
     // Public properties for external access
     public List<FirebaseUpdater.OpponentData> CurrentOpponents => currentOpponents;
@@ -109,6 +112,8 @@ public class EnemyScreenManager : MonoBehaviour
         if (FirebaseUpdater.Instance != null)
         {
             FirebaseUpdater.Instance.OnOpponentsDataReady += OnOpponentsDataReceived;
+            FirebaseUpdater.Instance.OnLeaderBoardDataReady += OnLeaderBoardDataReceived;
+
         }
 
         // Set up initial state
@@ -182,6 +187,14 @@ public class EnemyScreenManager : MonoBehaviour
         UpdateOpponentSlots();
     }
 
+    public void SetLeaderBoardData(List<FirebaseUpdater.OpponentData> leaderBoardList)
+    {
+        currentLeaderBoard = leaderBoardList;
+        isLeaderBoardDataLoaded = true;
+        CacheLeaderBoardSlotComponents();
+        UpdateLeaderBoardSlots();
+    }
+
     private void CacheOpponentSlotComponents()
     {
         if (EnemySlotParents == null) return;
@@ -202,6 +215,56 @@ public class EnemyScreenManager : MonoBehaviour
             if (opponentSlotButtons[i] == null)
             {
                 opponentSlotButtons[i] = slotTransform.gameObject.AddComponent<Button>();
+            }
+        }
+    }
+
+    // Cache leaderboard slot components: profile image, name, level, wins
+    private Button[] leaderBoardSlotButtons;
+    private Image[] leaderBoardSlotImages;
+    private TextMeshProUGUI[] leaderBoardSlotNameTexts;
+    private TextMeshProUGUI[] leaderBoardSlotLevelTexts;
+    private TextMeshProUGUI[] leaderBoardSlotWinsTexts;
+
+    private void CacheLeaderBoardSlotComponents()
+    {
+        if (LeaderBoardSlotParents == null) return;
+
+        int slotCount = Mathf.Min(LeaderBoardSlotParents.childCount, 10);
+        leaderBoardSlotButtons = new Button[slotCount];
+        leaderBoardSlotImages = new Image[slotCount];
+        leaderBoardSlotNameTexts = new TextMeshProUGUI[slotCount];
+        leaderBoardSlotLevelTexts = new TextMeshProUGUI[slotCount];
+        leaderBoardSlotWinsTexts = new TextMeshProUGUI[slotCount];
+
+        for (int i = 0; i < slotCount; i++)
+        {
+            Transform slotTransform = LeaderBoardSlotParents.GetChild(i);
+
+            // Profile picture
+            leaderBoardSlotImages[i] = slotTransform.GetComponent<Image>();
+
+            // Find texts by name or order (assumes children: [Image], [NameText], [LevelText], [WinsText])
+            TextMeshProUGUI[] texts = slotTransform.GetComponentsInChildren<TextMeshProUGUI>();
+            if (texts.Length >= 3)
+            {
+                leaderBoardSlotNameTexts[i] = texts[0];
+                leaderBoardSlotLevelTexts[i] = texts[1];
+                leaderBoardSlotWinsTexts[i] = texts[2];
+            }
+            else
+            {
+                // Fallback: assign nulls
+                leaderBoardSlotNameTexts[i] = null;
+                leaderBoardSlotLevelTexts[i] = null;
+                leaderBoardSlotWinsTexts[i] = null;
+            }
+
+            // Get or add button component
+            leaderBoardSlotButtons[i] = slotTransform.GetComponent<Button>();
+            if (leaderBoardSlotButtons[i] == null)
+            {
+                leaderBoardSlotButtons[i] = slotTransform.gameObject.AddComponent<Button>();
             }
         }
     }
@@ -261,6 +324,57 @@ public class EnemyScreenManager : MonoBehaviour
         }
     }
 
+    private void UpdateLeaderBoardSlots()
+    {
+        if (LeaderBoardSlotParents == null || leaderBoardSlotButtons == null)
+        {
+            Debug.LogError("LeaderBoardSlotParents or cached components are null");
+            return;
+        }
+
+        // Update slots with cached components for better performance
+        for (int i = 0; i < leaderBoardSlotButtons.Length; i++)
+        {
+            if (i < currentLeaderBoard.Count)
+            {
+                FirebaseUpdater.OpponentData leaderBoardEntry = currentLeaderBoard[i];
+
+                // Set username text
+                if (leaderBoardSlotNameTexts[i] != null)
+                {
+                    leaderBoardSlotNameTexts[i].text = leaderBoardEntry.username;
+                }
+
+                // Set level text
+                if (leaderBoardSlotLevelTexts[i] != null)
+                {
+                    leaderBoardSlotLevelTexts[i].text = "Level " + leaderBoardEntry.level.ToString();
+                }
+
+                // Set wins text
+                if (leaderBoardSlotWinsTexts[i] != null)
+                {
+                    leaderBoardSlotWinsTexts[i].text = leaderBoardEntry.wins.ToString();
+                }
+
+                // Enable the slot
+                leaderBoardSlotButtons[i].gameObject.SetActive(true);
+
+                // Set up click event (remove previous listeners for safety)
+                leaderBoardSlotButtons[i].onClick.RemoveAllListeners();
+                // int index = i; // Capture for closure
+                // leaderBoardSlotButtons[i].onClick.AddListener(() => ShowSelectedLeaderBoardEntry(index));
+            }
+            else
+            {
+                // Hide and clear empty slots
+                leaderBoardSlotButtons[i].gameObject.SetActive(false);
+                if (leaderBoardSlotNameTexts[i] != null) leaderBoardSlotNameTexts[i].text = "";
+                if (leaderBoardSlotLevelTexts[i] != null) leaderBoardSlotLevelTexts[i].text = "";
+                if (leaderBoardSlotWinsTexts[i] != null) leaderBoardSlotWinsTexts[i].text = "";
+            }
+        }
+    }
 
     private System.Collections.IEnumerator LoadProfilePicture(string imageUrl, Image targetImage)
     {
@@ -646,5 +760,10 @@ public class EnemyScreenManager : MonoBehaviour
     public void OnOpponentsDataReceived(List<FirebaseUpdater.OpponentData> opponents)
     {
         SetOpponentsData(opponents);
+    }
+
+    public void OnLeaderBoardDataReceived(List<FirebaseUpdater.OpponentData> leaderBoardList)
+    {
+        SetLeaderBoardData(leaderBoardList);
     }
 }

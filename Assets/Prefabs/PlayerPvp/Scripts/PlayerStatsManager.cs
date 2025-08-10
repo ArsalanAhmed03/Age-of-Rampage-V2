@@ -4,6 +4,7 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 using UnityEngine.Networking;
+using Unity.VisualScripting;
 
 public class PlayerStatsManager : MonoBehaviour
 {
@@ -32,10 +33,17 @@ public class PlayerStatsManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI PlayerNameText;
     [SerializeField] private Image profilePicture;
 
+    [SerializeField] Button LogoutButton;
+
     // Placeholder for future: units owned and their levels
     public List<string> OwnedUnits = new List<string>();
     public List<int> OwnedUnitsLevels = new List<int>();
     public List<string> LoadOut = new List<string>();
+
+    private void Logout()
+    {
+        FirebaseUpdater.Instance.Logout();
+    }
 
     // Properties for accessing and modifying stats
     public string PlayerName
@@ -184,10 +192,12 @@ public class PlayerStatsManager : MonoBehaviour
 
     void Start()
     {
+
         // Pull data from UserDataManager singleton
         if (UserDataManager.Instance != null)
         {
             // Use properties to ensure UI updates
+            LogoutButton.onClick.AddListener(Logout);
             PlayerName = UserDataManager.Instance.UserName;
             PlayerLevel = UserDataManager.Instance.Level;
             CurrentCoins = UserDataManager.Instance.Gold;
@@ -263,7 +273,7 @@ public class PlayerStatsManager : MonoBehaviour
         UpdateLevelUI();
         UpdateCoinsUI();
         UpdatePlayerNameUI();
-        
+
         if (!string.IsNullOrEmpty(ProfilePictureURL) && profilePicture != null)
         {
             StartCoroutine(LoadProfilePictureFromURL(ProfilePictureURL));
