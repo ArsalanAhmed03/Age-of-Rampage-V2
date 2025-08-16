@@ -1,107 +1,108 @@
-using UnityEngine;
-using UnityEngine.Purchasing;
-using UnityEngine.Purchasing.Extension;
 using System;
+using System.Collections.Generic;
+using UnityEngine;
+using Unity.Services.Core;
+using Unity.Services.Authentication;
+using UnityEngine.Purchasing;
 
-public class IAPManager : MonoBehaviour, IStoreListener
+[Serializable]
+public class PlayerPurchases
 {
-    private static IStoreController storeController;
-    private static IExtensionProvider extensionProvider;
+    public bool adsRemoved;
+    public List<string> ownedSkins = new List<string>();
+}
 
-    // Product IDs (match IAP Catalog + Store)
-    public const string DIAMONDS_PACK1 = "diamonds_pack1";
-    public const string DIAMONDS_PACK2 = "diamonds_pack2";
-    public const string DIAMONDS_PACK3 = "diamonds_pack3";
-    public const string DIAMONDS_PACK4 = "diamonds_pack4";
-    public const string DIAMONDS_PACK5 = "diamonds_pack5";
-    public const string DIAMONDS_PACK6 = "diamonds_pack6";
-    public const string MONTHLY_SUBSCRIPTION = "monthly_subscription";
+public class IAPOrbManager : MonoBehaviour
+{
+    public const string REMOVE_ADS = "REMOVE_ADS";
+    public const string SKIN_RED = "SKIN_RED_ORB";
+    public const string SKIN_BLUE = "SKIN_BLUE_ORB";
 
-    void Start()
+    private StoreController storeController;
+    private PlayerPurchases purchases = new PlayerPurchases();
+
+    async void Start()
     {
-        if (storeController == null)
-            InitializePurchasing();
+        await UnityServices.InitializeAsync();
+
+        if (!AuthenticationService.Instance.IsSignedIn)
+            await AuthenticationService.Instance.SignInAnonymouslyAsync();
+
+        await InitializeIAP();
     }
 
-    public void InitializePurchasing()
+    async System.Threading.Tasks.Task InitializeIAP()
     {
-        var builder = ConfigurationBuilder.Instance(StandardPurchasingModule.Instance());
+        storeController = UnityIAPServices.StoreController();
 
-        // Diamond packs (consumables)
-        builder.AddProduct(DIAMONDS_PACK1, ProductType.Consumable);
-        builder.AddProduct(DIAMONDS_PACK2, ProductType.Consumable);
-        builder.AddProduct(DIAMONDS_PACK3, ProductType.Consumable);
-        builder.AddProduct(DIAMONDS_PACK4, ProductType.Consumable);
-        builder.AddProduct(DIAMONDS_PACK5, ProductType.Consumable);
-        builder.AddProduct(DIAMONDS_PACK6, ProductType.Consumable);
+        storeController.OnPurchasePending += OnPurchasePending;
+        storeController.OnPurchaseFailed += OnPurchaseFailed;
+        storeController.OnProductsFetched += OnProductsFetched;
+        storeController.OnPurchasesFetched += OnPurchasesFetched;
 
-        // Monthly subscription (auto-renewing)
-        builder.AddProduct(MONTHLY_SUBSCRIPTION, ProductType.Subscription);
+        await storeController.Connect();
 
-        UnityPurchasing.Initialize(this, builder);
-    }
-
-    public void BuyProduct(string productId)
-    {
-        if (storeController != null && storeController.products.WithID(productId) != null)
+        var productList = new List<ProductDefinition>
         {
-            storeController.InitiatePurchase(productId);
-        }
-        else
+            new ProductDefinition(REMOVE_ADS, ProductType.NonConsumable),
+            new ProductDefinition(SKIN_RED, ProductType.NonConsumable),
+            new ProductDefinition(SKIN_BLUE, ProductType.NonConsumable)
+        };
+
+        storeController.FetchProducts(productList);
+    }
+
+    void OnProductsFetched(List<Product> products)
+    {
+        Debug.Log("Products fetched.");
+        storeController.FetchPurchases();
+    }
+
+    void OnPurchasesFetched(Orders orders)
+    {
+        foreach (var order in orders.ConfirmedOrders)
         {
-            Debug.LogError("BuyProduct FAIL. Not initialized or product not found.");
+            string id = order.Info.PurchasedProductInfo[0].productId;
+            if (id == REMOVE_ADS)
+                purchases.adsRemoved = true;
+            else if (id.StartsWith("skin_") && !purchases.ownedSkins.Contains(id))
+                purchases.ownedSkins.Add(id);
         }
+
     }
 
-    // Called when purchase is successful
-    public PurchaseProcessingResult ProcessPurchase(PurchaseEventArgs args)
+    void OnPurchasePending(PendingOrder order)
     {
-        switch (args.purchasedProduct.definition.id)
+        string id = order.Info.PurchasedProductInfo[0].productId;
+        Debug.Log($"Purchase pending: {id}");
+
+        if (id == REMOVE_ADS)
+            purchases.adsRemoved = true;
+        else if (id.StartsWith("skin_") && !purchases.ownedSkins.Contains(id))
+            purchases.ownedSkins.Add(id);
+
+        storeController.ConfirmPurchase(order);
+    }
+
+    void OnPurchaseFailed(FailedOrder order)
+    {
+        Debug.LogError($"Purchase failed: " + order.Info.PurchasedProductInfo[0].productId);
+    }
+
+    public async void Buy(string productId)
+    {
+        try
         {
-            case DIAMONDS_PACK1: AddDiamonds(100); break;
-            case DIAMONDS_PACK2: AddDiamonds(500); break;
-            case DIAMONDS_PACK3: AddDiamonds(1200); break;
-            case DIAMONDS_PACK4: AddDiamonds(2500); break;
-            case DIAMONDS_PACK5: AddDiamonds(6500); break;
-            case DIAMONDS_PACK6: AddDiamonds(14000); break;
-            case MONTHLY_SUBSCRIPTION:
-                UnlockSubscriptionFeatures();
-                break;
+            storeController.Purchase(new Cart(new CartItem(storeController.GetProductById(productId))));
+            Debug.Log("Purchase initiated for: " + productId);
         }
-        return PurchaseProcessingResult.Complete;
+        catch (Exception e)
+        {
+            Debug.LogError($"Purchase error: {e.Message}");
+        }
     }
 
-    private void AddDiamonds(int amount)
-    {
-        Debug.Log("Added " + amount + " diamonds!");
-        // TODO: Add diamonds to player’s currency (Firebase or local save)
-    }
 
-    private void UnlockSubscriptionFeatures()
-    {
-        Debug.Log("Monthly Subscription activated!");
-        // TODO: Mark subscription in player data (Firebase or local flag)
-    }
-
-    public void OnInitialized(IStoreController controller, IExtensionProvider extensions)
-    {
-        Debug.Log("Unity IAP initialized successfully.");
-        storeController = controller;
-        extensionProvider = extensions;
-    }
-
-    public void OnInitializeFailed(InitializationFailureReason error)
-    {
-        Debug.LogError("Unity IAP init failed: " + error);
-    }
-
-    public void OnInitializeFailed(InitializationFailureReason error, string message)
-    {
-        Debug.LogError("IAP failed: " + error + " - " + message);
-    }
-
-    public void OnPurchaseFailed(Product product, PurchaseFailureReason failureReason)
-    {
-        Debug.LogError("Purchase failed: " + product.definition.id + " - " + failureReason);
-    }
+    public bool AdsRemoved => purchases.adsRemoved;
+    public bool HasSkin(string skinId) => purchases.ownedSkins.Contains(skinId);
 }

@@ -14,7 +14,12 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Pvp.unity
     guid: eccb8c28f591a114d8939b9d4e3cc2fc
+  - enabled: 1
+    path: Assets/Scenes/SignUp.unity
+    guid: 914aa8d3330abef44bceadd31b46db44
   m_configObjects:
+    com.unity.adaptiveperformance.google.android.provider_settings: {fileID: 11400000, guid: c27249a11aa97ba408fe1a05334b8ede, type: 2}
+    com.unity.adaptiveperformance.loader_settings: {fileID: 11400000, guid: 26d3ed90b404fc248a4d7fba0666dd1d, type: 2}
     com.unity.adaptiveperformance.simulator.provider_settings: {fileID: 11400000, guid: 90e575e8df242fb448dd1b6bfa0d9267, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0

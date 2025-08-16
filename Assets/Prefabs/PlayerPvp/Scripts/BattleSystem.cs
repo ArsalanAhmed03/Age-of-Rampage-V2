@@ -182,8 +182,10 @@ public class BattleSystem : MonoBehaviour
         turnQueue.AddRange(enemyFrontline);
         turnQueue.AddRange(enemyBackline);
 
-        TournamentManager.Instance.StartTournament();
-
+        if (TournamentMode)
+        {
+            TournamentManager.Instance.StartTournament();
+        }
         // Assign bonus speed based on placement
         Dictionary<UnitCombatHandler, int> bonusSpeed = new Dictionary<UnitCombatHandler, int>();
 
@@ -458,8 +460,7 @@ public class BattleSystem : MonoBehaviour
         if (TournamentMode)
         {
             TournamentManager.Instance.EndTournament();
-            TournamentManager.Instance.BackToStartScreen();
-            TournamentManager.Instance.AddTournamentDamage((int) (enemyHealthTotal - enemyHealthCurrent));
+            TournamentManager.Instance.AddTournamentDamage((int)(enemyHealthTotal - enemyHealthCurrent));
         }
         fightEnded = false;
         // Destroy all player units
