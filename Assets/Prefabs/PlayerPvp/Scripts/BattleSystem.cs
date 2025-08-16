@@ -18,6 +18,13 @@ public class BattleSystem : MonoBehaviour
 
     [Header("Battle Controls")]
     public UnityEngine.UI.Button pauseButton;
+
+    public UnityEngine.UI.Button resumeButton;
+
+    public GameObject PauseMenu;
+
+    public bool TournamentMode = false;
+
     public UnityEngine.UI.Button fastForwardButton;
 
 
@@ -51,8 +58,28 @@ public class BattleSystem : MonoBehaviour
     private void Awake()
     {
         Instance = this;
-        pauseButton.onClick.AddListener(TooglePause);
-        fastForwardButton.onClick.AddListener(ToogleSpeedUp);
+        pauseButton.onClick.AddListener(PauseGame);
+        resumeButton.onClick.AddListener(ResumeGame);
+        // fastForwardButton.onClick.AddListener(ToogleSpeedUp);
+        // fastForwardButton.onClick.RemoveAllListeners();
+        fastForwardButton.gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
+
+        var trigger = fastForwardButton.gameObject.GetComponent<UnityEngine.EventSystems.EventTrigger>();
+
+        var pointerDown = new UnityEngine.EventSystems.EventTrigger.Entry
+        {
+            eventID = UnityEngine.EventSystems.EventTriggerType.PointerDown
+        };
+        pointerDown.callback.AddListener((data) => SpeedUp());
+        trigger.triggers.Add(pointerDown);
+
+        var pointerUp = new UnityEngine.EventSystems.EventTrigger.Entry
+        {
+            eventID = UnityEngine.EventSystems.EventTriggerType.PointerUp
+        };
+        pointerUp.callback.AddListener((data) => SpeedDown());
+        trigger.triggers.Add(pointerUp);
+
     }
 
     public void InitializeBattle()
@@ -89,28 +116,45 @@ public class BattleSystem : MonoBehaviour
             playerBackline.Add(handler);
         }
 
-        // Spawn Enemy Frontline
-        for (int i = 0; i < enemyFrontPrefabs.Count && i < enemyFrontSpawns.Length; i++)
+        if (TournamentMode)
         {
-            GameObject unitPrefab = enemyFrontPrefabs[i];
-            if (unitPrefab == null) continue;
-            GameObject go = Instantiate(unitPrefab, enemyFrontSpawns[i].position, Quaternion.identity);
-            UnitCombatHandler handler = go.GetComponent<UnitCombatHandler>();
-            enemyHealthTotal += handler.unitStats.GetStats().HP;
-            handler.IsFrontline = true;
-            enemyFrontline.Add(handler);
-        }
+            GameObject unitPrefab = enemyFrontPrefabs[0];
+            if (unitPrefab != null)
+            {
+                GameObject go = Instantiate(unitPrefab, enemyFrontSpawns[0].position, Quaternion.identity);
+                UnitCombatHandler handler = go.GetComponent<UnitCombatHandler>();
+                enemyHealthTotal += handler.unitStats.GetStats().HP;
+                handler.IsFrontline = true;
+                enemyFrontline.Add(handler);
 
-        // Spawn Enemy Backline
-        for (int i = 0; i < enemyBackPrefabs.Count && i < enemyBackSpawns.Length; i++)
+            }
+        }
+        else
         {
-            GameObject unitPrefab = enemyBackPrefabs[i];
-            if (unitPrefab == null) continue;
-            GameObject go = Instantiate(unitPrefab, enemyBackSpawns[i].position, Quaternion.identity);
-            UnitCombatHandler handler = go.GetComponent<UnitCombatHandler>();
-            enemyHealthTotal += handler.unitStats.GetStats().HP;
-            handler.IsFrontline = false;
-            enemyBackline.Add(handler);
+
+            // Spawn Enemy Frontline
+            for (int i = 0; i < enemyFrontPrefabs.Count && i < enemyFrontSpawns.Length; i++)
+            {
+                GameObject unitPrefab = enemyFrontPrefabs[i];
+                if (unitPrefab == null) continue;
+                GameObject go = Instantiate(unitPrefab, enemyFrontSpawns[i].position, Quaternion.identity);
+                UnitCombatHandler handler = go.GetComponent<UnitCombatHandler>();
+                enemyHealthTotal += handler.unitStats.GetStats().HP;
+                handler.IsFrontline = true;
+                enemyFrontline.Add(handler);
+            }
+
+            // Spawn Enemy Backline
+            for (int i = 0; i < enemyBackPrefabs.Count && i < enemyBackSpawns.Length; i++)
+            {
+                GameObject unitPrefab = enemyBackPrefabs[i];
+                if (unitPrefab == null) continue;
+                GameObject go = Instantiate(unitPrefab, enemyBackSpawns[i].position, Quaternion.identity);
+                UnitCombatHandler handler = go.GetComponent<UnitCombatHandler>();
+                enemyHealthTotal += handler.unitStats.GetStats().HP;
+                handler.IsFrontline = false;
+                enemyBackline.Add(handler);
+            }
         }
 
         playerHealthCurrent = playerHealthTotal;
@@ -121,6 +165,7 @@ public class BattleSystem : MonoBehaviour
 
     private Transform[] GetChildren(Transform parent)
     {
+        if (parent == null || parent.childCount == 0) return new Transform[0];
         Transform[] children = new Transform[parent.childCount];
         for (int i = 0; i < parent.childCount; i++)
         {
@@ -137,6 +182,8 @@ public class BattleSystem : MonoBehaviour
         turnQueue.AddRange(enemyFrontline);
         turnQueue.AddRange(enemyBackline);
 
+        TournamentManager.Instance.StartTournament();
+
         // Assign bonus speed based on placement
         Dictionary<UnitCombatHandler, int> bonusSpeed = new Dictionary<UnitCombatHandler, int>();
 
@@ -152,9 +199,13 @@ public class BattleSystem : MonoBehaviour
         for (int i = 0; i < enemyFrontline.Count; i++)
             bonusSpeed[enemyFrontline[i]] = 6 - i;
 
-        // Enemy Back: +3, +2, +1
-        for (int i = 0; i < enemyBackline.Count; i++)
-            bonusSpeed[enemyBackline[i]] = 3 - i;
+
+        if (!TournamentMode)
+        {
+            // Enemy Back: +3, +2, +1
+            for (int i = 0; i < enemyBackline.Count; i++)
+                bonusSpeed[enemyBackline[i]] = 3 - i;
+        }
 
         // Shuffle for randomness among same speed+bonus
         for (int i = turnQueue.Count - 1; i > 0; i--)
@@ -255,13 +306,17 @@ public class BattleSystem : MonoBehaviour
         if (playerFrontline.Count + playerBackline.Count == 0)
         {
             Debug.Log("Enemy team wins!");
-            if (PlayerStatsManager.Instance.PlayerLevel > 1)
+            if (!TournamentMode)
             {
-                PlayerStatsManager.Instance.PlayerLevel--;
-            }
+                if (PlayerStatsManager.Instance.PlayerLevel > 1)
+                {
+                    PlayerStatsManager.Instance.PlayerLevel--;
+                }
 
-            // Update enemy level when they win
-            UpdateEnemyLevel(1);
+                // Update enemy level when they win
+                UpdateEnemyLevel(1);
+                UpdateEnemyWins(1);
+            }
 
             lostScreen.SetActive(true);
             fightEnded = true;
@@ -270,10 +325,14 @@ public class BattleSystem : MonoBehaviour
         if (enemyFrontline.Count + enemyBackline.Count == 0)
         {
             Debug.Log("Player team wins!");
-            PlayerStatsManager.Instance.PlayerLevel++;
+            if (!TournamentMode)
+            {
+                PlayerStatsManager.Instance.PlayerLevel++;
+                PlayerStatsManager.Instance.Wins++;
 
-            // Update enemy level when they lose
-            UpdateEnemyLevel(-1);
+                // Update enemy level when they lose
+                UpdateEnemyLevel(-1);
+            }
 
             wonScreen.SetActive(true);
             fightEnded = true;
@@ -310,6 +369,30 @@ public class BattleSystem : MonoBehaviour
         }
     }
 
+    private void UpdateEnemyWins(int newWins)
+    {
+        Debug.Log($"UpdateEnemyWins called with newWins: {newWins}");
+
+        // Find the EnemyScreenManager in the scene
+        EnemyScreenManager enemyManager = FindFirstObjectByType<EnemyScreenManager>();
+
+        if (enemyManager != null)
+        {
+            Debug.Log($"Found EnemyScreenManager. HasSelectedOpponent: {enemyManager.HasSelectedOpponent}");
+            if (enemyManager.HasSelectedOpponent)
+            {
+                enemyManager.UpdateSelectedOpponentWins(newWins);
+            }
+            else
+            {
+                Debug.LogWarning("EnemyScreenManager found but no selected opponent to update wins for");
+            }
+        }
+        else
+        {
+            Debug.LogError("EnemyScreenManager not found in scene");
+        }
+    }
 
     bool isPaused = false;
     bool isSpeedingUp = false;
@@ -328,6 +411,20 @@ public class BattleSystem : MonoBehaviour
 
     }
 
+    public void PauseGame()
+    {
+        Time.timeScale = 0f;
+        isPaused = true;
+        PauseMenu.SetActive(true);
+    }
+
+    public void ResumeGame()
+    {
+        Time.timeScale = 1f;
+        PauseMenu.SetActive(false);
+        isPaused = false;
+    }
+
     public void ToogleSpeedUp()
     {
         if (isSpeedingUp)
@@ -342,8 +439,28 @@ public class BattleSystem : MonoBehaviour
         }
     }
 
+    public void SpeedUp()
+    {
+        Time.timeScale = 1.5f;
+        isSpeedingUp = true;
+    }
+
+    public void SpeedDown()
+    {
+        Time.timeScale = 1f;
+        isSpeedingUp = false;
+    }
+
+
+
     public void ResetBattleScene()
     {
+        if (TournamentMode)
+        {
+            TournamentManager.Instance.EndTournament();
+            TournamentManager.Instance.BackToStartScreen();
+            TournamentManager.Instance.AddTournamentDamage((int) (enemyHealthTotal - enemyHealthCurrent));
+        }
         fightEnded = false;
         // Destroy all player units
         foreach (var unit in playerFrontline)

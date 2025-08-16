@@ -30,6 +30,7 @@ public class databaseManager : MonoBehaviour
         public int Age;
         public int Gold;
         public int Level;
+        public int Wins;
         public string ProfilePictureURL;
         public List<string> OwnedUnits;
         public List<int> OwnedUnitsLevels;
@@ -37,7 +38,7 @@ public class databaseManager : MonoBehaviour
 
         public User() { }
 
-        public User(string username, string storedPassword, string email, int age, int gold, int level, List<string> ownedUnits, List<int> ownedUnitsLevels, string profilePictureURL = "")
+        public User(string username, string storedPassword, string email, int age, int gold, int level, List<string> ownedUnits, List<int> ownedUnitsLevels, string profilePictureURL = "https://res.cloudinary.com/dtl29wsay/image/upload/v1755016948/epvmfob9g36skxoiyevz.png", int wins = 0)
         {
             Username = username;
             StoredPassword = storedPassword;
@@ -48,7 +49,8 @@ public class databaseManager : MonoBehaviour
             OwnedUnits = ownedUnits ?? new List<string>();
             OwnedUnitsLevels = ownedUnitsLevels ?? new List<int>();
             LoadOut = ownedUnits ?? new List<string>();
-            ProfilePictureURL = profilePictureURL ?? "";
+            ProfilePictureURL = profilePictureURL ?? "https://res.cloudinary.com/dtl29wsay/image/upload/v1755016948/epvmfob9g36skxoiyevz.png";
+            Wins = wins;
         }
     }
 
@@ -485,7 +487,7 @@ public class databaseManager : MonoBehaviour
             1,
             new() { "CraneRon", "KenDuong", "Ronny-V" },
             new() { 1, 1, 1 },
-            "<guest_profile_picture_url>"
+            "https://res.cloudinary.com/dtl29wsay/image/upload/v1755016948/epvmfob9g36skxoiyevz.png"
         );
         UpdateUserDataManager(guestUser, false);
         StartCoroutine(LoadGameSceneAfterDelay());
@@ -641,8 +643,9 @@ public class databaseManager : MonoBehaviour
     {
         List<string> defaultUnits = new List<string> { "CraneRon", "KenDuong", "Ronny-V" };
         List<int> defaultUnitsLevels = new List<int> { 1, 1, 1 };
+        int defaultWins = 0;
 
-        User newUser = new User(name, password, email, int.Parse(age), 100, 1, defaultUnits, defaultUnitsLevels, profilePictureURL);
+        User newUser = new User(name, password, email, int.Parse(age), 100, 1, defaultUnits, defaultUnitsLevels, profilePictureURL, defaultWins);
 
         string json = JsonUtility.ToJson(newUser);
         var dbTask = dbRef.Child("users").Child(user.UserId).SetRawJsonValueAsync(json);
@@ -759,6 +762,7 @@ public class databaseManager : MonoBehaviour
         UserDataManager.Instance.OwnedUnitsLevels = user.OwnedUnitsLevels ?? new List<int> { 1, 1, 1 };
         UserDataManager.Instance.LoadOut = user.LoadOut ?? new List<string> { "CraneRon", "KenDuong", "Ronny-V" };
         UserDataManager.Instance.ProfilePictureURL = user.ProfilePictureURL ?? "";
+        UserDataManager.Instance.Wins = user.Wins;
         UserDataManager.Instance.isLoggedIn = isLoggedIn;
     }
 

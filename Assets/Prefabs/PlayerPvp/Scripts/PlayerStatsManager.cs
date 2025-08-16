@@ -25,6 +25,8 @@ public class PlayerStatsManager : MonoBehaviour
     [SerializeField] private string playerName = "Player1";
     [SerializeField] private int playerLevel = 1;
     [SerializeField] private int currentCoins = 1000;
+    [SerializeField] private int wins = 0;
+
     [SerializeField] private string profilePictureURL = ""; // Add this field
 
     // References for displaying player level and coins using TextMeshPro
@@ -64,6 +66,17 @@ public class PlayerStatsManager : MonoBehaviour
             playerLevel = value;
             FirebaseUpdater.Instance.UpdateUserLevel(playerLevel);
             UpdateLevelUI();
+        }
+    }
+
+    public int Wins
+    {
+        get => wins;
+        set
+        {
+            wins = value;
+            FirebaseUpdater.Instance.UpdateUserWins(wins);
+            // UpdateWinsUI();
         }
     }
 
@@ -175,13 +188,13 @@ public class PlayerStatsManager : MonoBehaviour
     private void UpdateLevelUI()
     {
         if (playerLevelText != null)
-            playerLevelText.text = $"Level: {playerLevel}";
+            playerLevelText.text = $"{playerLevel}";
     }
 
     private void UpdateCoinsUI()
     {
         if (coinsText != null)
-            coinsText.text = $"Coins: {currentCoins}";
+            coinsText.text = $"{currentCoins}";
     }
 
     private void UpdatePlayerNameUI()

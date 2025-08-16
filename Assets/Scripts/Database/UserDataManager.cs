@@ -12,6 +12,7 @@ public class UserDataManager : MonoBehaviour
     public List<int> OwnedUnitsLevels = new List<int>();
     public List<string> LoadOut = new List<string>();
     public string ProfilePictureURL;
+    public int Wins;
     public bool isLoggedIn = false;
 
 

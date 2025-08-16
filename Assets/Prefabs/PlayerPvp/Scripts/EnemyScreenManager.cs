@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEditor;
 
 public class EnemyScreenManager : MonoBehaviour
 {
@@ -75,6 +76,37 @@ public class EnemyScreenManager : MonoBehaviour
         Debug.Log($"Successfully updated {selectedOpponent.username}'s level to {newLevel}");
     }
 
+    public void UpdateSelectedOpponentWins(int winsChange)
+    {
+        Debug.Log($"UpdateSelectedOpponentWins called with winsChange: {winsChange}");
+
+        if (!HasSelectedOpponent)
+        {
+            Debug.LogWarning("No valid selected opponent to update wins for");
+            return;
+        }
+
+        FirebaseUpdater.OpponentData selectedOpponent = currentOpponents[selectedOpponentIndex];
+        int oldWins = selectedOpponent.wins;
+        int newWins = Mathf.Max(0, selectedOpponent.wins + winsChange);
+
+        Debug.Log($"Updating {selectedOpponent.username} wins from {oldWins} to {newWins}");
+
+        // Update locally first
+        selectedOpponent.wins = newWins;
+
+        // Update UI if the selected enemy menu is visible
+        if (SelectedEnemyMenu != null && SelectedEnemyMenu.activeInHierarchy)
+        {
+            // Update the UI elements related to wins
+        }
+
+        // Update in Firebase database
+        UpdateOpponentWinsInDatabase(selectedOpponent.userId, newWins);
+
+        Debug.Log($"Successfully updated {selectedOpponent.username}'s wins to {newWins}");
+    }
+
     private void UpdateOpponentLevelInDatabase(string userId, int newLevel)
     {
         if (FirebaseUpdater.Instance == null)
@@ -85,6 +117,18 @@ public class EnemyScreenManager : MonoBehaviour
 
         // Update the opponent's level in Firebase database
         StartCoroutine(UpdateUserLevelCoroutine(userId, newLevel));
+    }
+
+    private void UpdateOpponentWinsInDatabase(string userId, int newWins)
+    {
+        if (FirebaseUpdater.Instance == null)
+        {
+            Debug.LogError("FirebaseUpdater.Instance is null, cannot update opponent wins in database");
+            return;
+        }
+
+        // Update the opponent's wins in Firebase database
+        StartCoroutine(UpdateUserWinsCoroutine(userId, newWins));
     }
 
     private System.Collections.IEnumerator UpdateUserLevelCoroutine(string userId, int newLevel)
@@ -103,6 +147,25 @@ public class EnemyScreenManager : MonoBehaviour
         else if (updateTask.IsFaulted)
         {
             Debug.LogError($"Failed to update user {userId} level in database: {updateTask.Exception?.GetBaseException()}");
+        }
+    }
+
+    private System.Collections.IEnumerator UpdateUserWinsCoroutine(string userId, int newWins)
+    {
+        // Get Firebase database reference
+        Firebase.Database.DatabaseReference dbRef = Firebase.Database.FirebaseDatabase.DefaultInstance.RootReference;
+
+        var updateTask = dbRef.Child("users").Child(userId).Child("Wins").SetValueAsync(newWins);
+
+        yield return new WaitUntil(() => updateTask.IsCompleted);
+
+        if (updateTask.IsCompletedSuccessfully)
+        {
+            Debug.Log($"Successfully updated user {userId} wins to {newWins} in database");
+        }
+        else if (updateTask.IsFaulted)
+        {
+            Debug.LogError($"Failed to update user {userId} wins in database: {updateTask.Exception?.GetBaseException()}");
         }
     }
 
@@ -302,7 +365,7 @@ public class EnemyScreenManager : MonoBehaviour
 
                 if (opponentSlotImages[i] != null && !string.IsNullOrEmpty(opponent.profilePictureUrl))
                 {
-                    Debug.Log($"Loading profile picture for {opponent.username}");
+                    // Debug.Log($"Loading profile picture for {opponent.username}");
                     StartCoroutine(LoadProfilePicture(opponent.profilePictureUrl, opponentSlotImages[i]));
                 }
 
@@ -338,6 +401,12 @@ public class EnemyScreenManager : MonoBehaviour
             if (i < currentLeaderBoard.Count)
             {
                 FirebaseUpdater.OpponentData leaderBoardEntry = currentLeaderBoard[i];
+
+                if (leaderBoardSlotImages[i] != null && !string.IsNullOrEmpty(leaderBoardEntry.profilePictureUrl))
+                {
+                    Debug.Log($"<color=purple>Loading profile picture for {leaderBoardEntry.username}</color>");
+                    StartCoroutine(LoadProfilePicture(leaderBoardEntry.profilePictureUrl, leaderBoardSlotImages[i]));
+                }
 
                 // Set username text
                 if (leaderBoardSlotNameTexts[i] != null)
@@ -642,7 +711,7 @@ public class EnemyScreenManager : MonoBehaviour
 
                 if (slotImage != null) slotImage.sprite = null;
                 if (slotText != null) slotText.text = "";
-                slot.gameObject.SetActive(false);
+                // slot.gameObject.SetActive(false);
             }
         }
     }
@@ -663,7 +732,9 @@ public class EnemyScreenManager : MonoBehaviour
         FirebaseUpdater.OpponentData selectedOpponent = currentOpponents[selectedOpponentIndex];
 
         // Get reference to BattleSystem
-        BattleSystem battleSystem = FindFirstObjectByType<BattleSystem>();
+        // BattleSystem battleSystem = FindFirstObjectByType<BattleSystem>();
+        BattleSystem battleSystem = SelectionScreenManager.Instance.battleSystem;
+
         if (battleSystem == null)
         {
             Debug.LogError("BattleSystem not found in scene");
@@ -728,6 +799,37 @@ public class EnemyScreenManager : MonoBehaviour
         SelectionScreenManager.Instance.OnStartBattleClicked();
         Debug.Log($"Set enemy loadout for {selectedOpponent.username}: Front={battleSystem.enemyFrontPrefabs.Count}, Back={battleSystem.enemyBackPrefabs.Count}");
         Debug.Log($"Selected opponent preserved for level updates: {selectedOpponent.username} (Index: {selectedOpponentIndex})");
+    }
+
+    // Unit TournamentBoss;
+
+    public void SetEnemyLoadoutForTournament()
+    {
+        BattleSystem battleSystem = SelectionScreenManager.Instance.tournamentBattleHandler;
+
+        if (battleSystem == null)
+        {
+            Debug.LogError("BattleSystem not found in scene");
+            return;
+        }
+
+        battleSystem.enemyFrontPrefabs.Clear();
+        battleSystem.enemyBackPrefabs.Clear();
+
+        GameObject unitPrefab = null;
+        string unitName = "Dharmendran"; // Assuming TournamentBoss is the name of the unit prefab
+
+        unitPrefab = FindUnitPrefab(unitName);
+        if (unitPrefab != null)
+        {
+            UnitStats unitStats = unitPrefab.GetComponent<UnitStats>();
+            unitStats.currentLevel = 20;
+            battleSystem.enemyFrontPrefabs.Add(unitPrefab);
+        }
+
+        SelectionScreenManager.Instance.OnTournamentBattleClicked();
+
+
     }
 
     private GameObject FindUnitPrefab(string unitName)

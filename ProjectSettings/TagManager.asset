@@ -10,6 +10,8 @@ TagManager:
   - WonText
   - LostText
   - BodyRotate
+  - BattleSystem
+  - BattleSystemTournament
   layers:
   - Default
   - TransparentFX

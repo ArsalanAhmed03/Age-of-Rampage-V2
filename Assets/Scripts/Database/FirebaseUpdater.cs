@@ -125,6 +125,31 @@ public class FirebaseUpdater : MonoBehaviour
         });
     }
 
+    public void UpdateUserWins(int newWins)
+    {
+        if (!IsUserValid()) return;
+
+        Dictionary<string, object> updates = new Dictionary<string, object>
+        {
+            { "Wins", newWins }
+        };
+
+        dbRef.Child("users").Child(user.UserId).UpdateChildrenAsync(updates).ContinueWithOnMainThread(task =>
+        {
+            if (task.IsCompletedSuccessfully)
+            {
+                Debug.Log("User wins updated successfully!");
+                // Update local data to keep in sync
+                if (UserDataManager.Instance != null)
+                    UserDataManager.Instance.Wins = newWins;
+            }
+            else if (task.IsFaulted)
+            {
+                Debug.LogError("Failed to update wins: " + task.Exception?.GetBaseException());
+            }
+        });
+    }
+
     public void UpdateOwnedUnits(List<string> ownedUnits, List<int> unitLevels)
     {
         if (!IsUserValid()) return;
