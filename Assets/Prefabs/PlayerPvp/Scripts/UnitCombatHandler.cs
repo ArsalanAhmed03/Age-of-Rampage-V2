@@ -15,7 +15,8 @@ public class UnitCombatHandler : MonoBehaviour
     [Header("Body Rotation")]
     public GameObject bodyRotate;
 
-    private BattleSystem battleSystem;
+    public BattleSystem battleSystem;
+    public BattleSystem battleSystemTournament;
     private UnitCombatHandler currentTarget;
     public UnitStats unitStats;
     private int finalDamage;
@@ -28,7 +29,7 @@ public class UnitCombatHandler : MonoBehaviour
     private void Awake()
     {
         animator = GetComponentInChildren<Animator>();
-        battleSystem = BattleSystem.Instance;
+        // battleSystem = BattleSystem.Instance;
         unitStats = GetComponent<UnitStats>();
         spriteRenderer = GetComponent<SpriteRenderer>();
 
@@ -36,7 +37,34 @@ public class UnitCombatHandler : MonoBehaviour
             Debug.LogError($"UnitStats missing on {name}");
 
         if (battleSystem == null)
-            Debug.LogError("BattleSystem instance not found!");
+        {
+            GameObject bsObj = GameObject.FindGameObjectWithTag("BattleSystem");
+            if (bsObj != null)
+            {
+                battleSystem = bsObj.GetComponent<BattleSystem>();
+                if (battleSystem == null)
+                    Debug.LogError("BattleSystem component not found on object with tag 'BattleSystem'.");
+            }
+            else
+            {
+                Debug.LogError("No GameObject found with tag 'BattleSystem'.");
+            }
+        }
+
+        if (battleSystemTournament == null)
+        {
+            GameObject bsObj = GameObject.FindGameObjectWithTag("BattleSystemTournament");
+            if (bsObj != null)
+            {
+                battleSystemTournament = bsObj.GetComponent<BattleSystem>();
+                if (battleSystemTournament == null)
+                    Debug.LogError("BattleSystemTournament component not found on object with tag 'BattleSystemTournament'.");
+            }
+            else
+            {
+                Debug.LogError("No GameObject found with tag 'BattleSystemTournament'.");
+            }
+        }
 
         // Flip sprite based on position
         if (spriteRenderer != null)
@@ -79,7 +107,14 @@ public class UnitCombatHandler : MonoBehaviour
         originalOrder = spriteRenderer.sortingOrder;
         spriteRenderer.sortingOrder = 10;
 
-        currentTarget = battleSystem.PickTarget(this);
+        if (TournamentManager.Instance.IsTournamentActive)
+        {
+            currentTarget = battleSystemTournament.PickTarget(this);
+        }
+        else
+        {
+            currentTarget = battleSystem.PickTarget(this);
+        }
         if (currentTarget == null)
         {
             Debug.Log("No valid target found!");
@@ -121,9 +156,18 @@ public class UnitCombatHandler : MonoBehaviour
             return;
         }
 
-        unitStats.currentHP -= incomingDamage;
-        if (unitStats.currentHP < 0) unitStats.currentHP = 0;
-        battleSystem.UpdateHealthBars(incomingDamage);
+        int actualDamage = unitStats.currentHP <= incomingDamage ? unitStats.currentHP : incomingDamage;
+        unitStats.currentHP -= actualDamage;
+        // if (unitStats.currentHP < 0) unitStats.currentHP = 0;
+
+        if (TournamentManager.Instance.IsTournamentActive)
+        {
+            battleSystemTournament.UpdateHealthBars(actualDamage);
+        }
+        else
+        {
+            battleSystem.UpdateHealthBars(actualDamage);
+        }
 
         UpdateHealthText();
 
@@ -136,7 +180,14 @@ public class UnitCombatHandler : MonoBehaviour
     void Die()
     {
         Debug.Log($"{gameObject.name} has died.");
-        battleSystem.RemoveUnit(this);
+        if (TournamentManager.Instance.IsTournamentActive)
+        {
+            battleSystemTournament.RemoveUnit(this);
+        }
+        else
+        {
+            battleSystem.RemoveUnit(this);
+        }
         Destroy(gameObject);
     }
 
@@ -187,10 +238,20 @@ public class UnitCombatHandler : MonoBehaviour
             yield return null;
         }
         spriteRenderer.sortingOrder = originalOrder;
-        // battleSystem.NextTurn();
-        if (!battleSystem.fightEnded)
+
+        if (TournamentManager.Instance.IsTournamentActive)
         {
-            battleSystem.NextTurn();
+            if (!battleSystemTournament.fightEnded)
+            {
+                battleSystemTournament.NextTurn();
+            }
+        }
+        else
+        {
+            if (!battleSystem.fightEnded)
+            {
+                battleSystem.NextTurn();
+            }
         }
     }
 }

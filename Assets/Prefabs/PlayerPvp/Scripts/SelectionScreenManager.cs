@@ -20,6 +20,8 @@ public class SelectionScreenManager : MonoBehaviour
     [Header("UI Panels")]
     public GameObject loadoutScreen;
     public GameObject battleScreen;
+    public GameObject tournamentBattleScreen;
+
 
     [Header("Unit Selection")]
     public Transform unitSelectionGrid;
@@ -246,7 +248,7 @@ public class SelectionScreenManager : MonoBehaviour
                             break;
                         }
                     }
-                    
+
                 }
                 else
                 {
@@ -334,6 +336,8 @@ public class SelectionScreenManager : MonoBehaviour
             backlineCountText.text = $"Backline: {LoadoutData.selectedBackline.Count}/3";
     }
 
+    public BattleSystem battleSystem;
+
     public void OnStartBattleClicked()
     {
         int frontCount = 0, backCount = 0;
@@ -356,8 +360,36 @@ public class SelectionScreenManager : MonoBehaviour
         battleScreen.SetActive(true);
 
         // Pass control to BattleSystem
-        BattleSystem bs = FindFirstObjectByType<BattleSystem>();
-        bs.InitializeBattle();
+        // BattleSystem bs = FindFirstObjectByType<BattleSystem>();
+        battleSystem.InitializeBattle();
+    }
+
+    public BattleSystem tournamentBattleHandler;
+
+    public void OnTournamentBattleClicked()
+    {
+        int frontCount = 0, backCount = 0;
+
+        for (int i = 0; i < 3; i++)
+            if (LoadoutData.selectedUnits[i] != null) frontCount++;
+
+        for (int i = 3; i < 6; i++)
+            if (LoadoutData.selectedUnits[i] != null) backCount++;
+
+        // Allow battle if either all frontline or all backline or all six are present
+        if (!(frontCount == 3 || backCount == 3))
+        {
+            Debug.LogWarning("Please assign either 3 front units, 3 back units, or all 6 units before starting the battle.");
+            return;
+        }
+        
+        // Hide Loadout UI, Show Tournament Battle Screen
+        loadoutScreen.SetActive(false);
+        tournamentBattleScreen.SetActive(true);
+
+        // Pass control to BattleSystem
+        // BattleSystem bs = FindFirstObjectByType<BattleSystem>();
+        tournamentBattleHandler.InitializeBattle();
     }
 
     public void OnBattleEnded()

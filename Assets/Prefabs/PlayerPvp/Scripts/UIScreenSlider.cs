@@ -32,7 +32,7 @@ public class UIScreenSlider : MonoBehaviour
         screenWidth = GetComponent<RectTransform>().rect.width;
         screens = new RectTransform[screenContainer.childCount];
 
-        for (int i = 0; i < screenContainer.childCount - 1; i++)
+        for (int i = 0; i < screenContainer.childCount; i++)
         {
             screens[i] = screenContainer.GetChild(i) as RectTransform;
         }

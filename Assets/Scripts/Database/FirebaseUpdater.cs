@@ -11,6 +11,7 @@ public class FirebaseUpdater : MonoBehaviour
 
     // Event to notify when opponents data is ready
     public System.Action<List<OpponentData>> OnOpponentsDataReady;
+    public System.Action<List<OpponentData>> OnLeaderBoardDataReady;
 
     private void OnEnable()
     {
@@ -120,6 +121,31 @@ public class FirebaseUpdater : MonoBehaviour
             else if (task.IsFaulted)
             {
                 Debug.LogError("Failed to update level: " + task.Exception?.GetBaseException());
+            }
+        });
+    }
+
+    public void UpdateUserWins(int newWins)
+    {
+        if (!IsUserValid()) return;
+
+        Dictionary<string, object> updates = new Dictionary<string, object>
+        {
+            { "Wins", newWins }
+        };
+
+        dbRef.Child("users").Child(user.UserId).UpdateChildrenAsync(updates).ContinueWithOnMainThread(task =>
+        {
+            if (task.IsCompletedSuccessfully)
+            {
+                Debug.Log("User wins updated successfully!");
+                // Update local data to keep in sync
+                if (UserDataManager.Instance != null)
+                    UserDataManager.Instance.Wins = newWins;
+            }
+            else if (task.IsFaulted)
+            {
+                Debug.LogError("Failed to update wins: " + task.Exception?.GetBaseException());
             }
         });
     }
@@ -234,7 +260,7 @@ public class FirebaseUpdater : MonoBehaviour
     {
         if (user == null)
         {
-            Debug.LogError("No user logged in. Cannot perform Firebase operation.");
+            // Debug.LogError("No user logged in. Cannot perform Firebase operation.");
             return false;
         }
         return true;
@@ -303,7 +329,9 @@ public class FirebaseUpdater : MonoBehaviour
         public List<int> loadoutLevels;
         public string profilePictureUrl;
 
-        public OpponentData(string userId, string username, int level, List<string> loadout, List<int> loadoutLevels, string profilePictureUrl)
+        public int wins;
+
+        public OpponentData(string userId, string username, int level, List<string> loadout, List<int> loadoutLevels, string profilePictureUrl, int wins)
         {
             this.userId = userId;
             this.username = username;
@@ -311,10 +339,14 @@ public class FirebaseUpdater : MonoBehaviour
             this.loadout = loadout ?? new List<string>();
             this.loadoutLevels = loadoutLevels ?? new List<int>();
             this.profilePictureUrl = profilePictureUrl;
+            this.wins = wins;
         }
     }
 
     public List<OpponentData> opponents = new List<OpponentData>();
+
+    public List<OpponentData> leaderBoardList = new List<OpponentData>();
+
 
     public void GetAllOpponents(int maxResults = 6)
     {
@@ -344,27 +376,42 @@ public class FirebaseUpdater : MonoBehaviour
 
             foreach (DataSnapshot userSnapshot in snapshot.Children)
             {
+
                 // Check if we've reached the maximum number of results
                 if (opponents.Count >= maxResults)
-                    break;
+                {
+                    Debug.Log($"Total opponents found: {opponents.Count} (limited to {maxResults} max results)");
+                    OnOpponentsDataReady?.Invoke(opponents);
+                    // break;
+                }
 
                 string userId = userSnapshot.Key;
 
                 // Skip the current logged-in user
-                if (userId == user.UserId)
+                if (UserDataManager.Instance.isLoggedIn && userId == user.UserId)
                     continue;
 
                 try
                 {
                     // Get user data
                     string username = userSnapshot.Child("Username").Value?.ToString() ?? "Unknown";
+
                     int level = 1;
+                    int wins = 1;
 
                     if (userSnapshot.Child("Level").Value != null)
                     {
                         if (int.TryParse(userSnapshot.Child("Level").Value.ToString(), out int parsedLevel))
                         {
                             level = parsedLevel;
+                        }
+                    }
+
+                    if (userSnapshot.Child("Wins").Value != null)
+                    {
+                        if (int.TryParse(userSnapshot.Child("Wins").Value.ToString(), out int parsedWins))
+                        {
+                            wins = parsedWins;
                         }
                     }
 
@@ -432,8 +479,12 @@ public class FirebaseUpdater : MonoBehaviour
                     // Get profile picture URL
                     string profilePictureUrl = userSnapshot.Child("ProfilePictureURL").Value?.ToString() ?? "";
 
-                    OpponentData opponent = new OpponentData(userId, username, level, loadout, loadoutLevels, profilePictureUrl);
-                    opponents.Add(opponent);
+                    OpponentData opponent = new OpponentData(userId, username, level, loadout, loadoutLevels, profilePictureUrl, wins);
+
+                    if (opponents.Count < maxResults)
+                        opponents.Add(opponent);
+
+                    leaderBoardList.Add(opponent);
 
                     Debug.Log($"Found opponent: {username} (Level {level}) - Loadout: {string.Join(", ", loadout)} - Levels: {string.Join(", ", loadoutLevels)}");
                 }
@@ -443,13 +494,36 @@ public class FirebaseUpdater : MonoBehaviour
                 }
             }
 
-            Debug.Log($"Total opponents found: {opponents.Count} (limited to {maxResults} max results)");
+            Debug.Log($"Total opponents found: {leaderBoardList.Count}");
 
             // Notify listeners that opponents data is ready
-            OnOpponentsDataReady?.Invoke(opponents);
+            // OnOpponentsDataReady?.Invoke(opponents);
+
+            leaderBoardList.Sort((a, b) => b.level.CompareTo(a.level));
+
+            if (leaderBoardList.Count > 10)
+            {
+                leaderBoardList = leaderBoardList.GetRange(0, 10);
+            }
+
+
+            OnLeaderBoardDataReady?.Invoke(leaderBoardList);
 
             // Data is now available in the 'opponents' list
             // You can process this data as needed
         });
+    }
+
+    public void Logout()
+    {
+        Debug.Log("Logging out...");
+        auth.SignOut();
+
+        PlayerPrefs.DeleteKey("SavedEmail");
+        PlayerPrefs.DeleteKey("SavedPassword");
+        PlayerPrefs.DeleteKey("UserName");
+        PlayerPrefs.Save();
+
+        UnityEngine.SceneManagement.SceneManager.LoadScene("SignUp");
     }
 }

@@ -9,6 +9,11 @@ using UnityEngine.UI;
 using System.Collections;
 using UnityEngine.Networking;
 using System.IO;
+using System;
+using UnityEngine.Rendering;
+using Unity.Services.Lobbies.Models;
+
+
 
 #if UNITY_EDITOR || UNITY_STANDALONE
 using SFB; // StandaloneFileBrowser for PC testing
@@ -25,6 +30,7 @@ public class databaseManager : MonoBehaviour
         public int Age;
         public int Gold;
         public int Level;
+        public int Wins;
         public string ProfilePictureURL;
         public List<string> OwnedUnits;
         public List<int> OwnedUnitsLevels;
@@ -32,7 +38,7 @@ public class databaseManager : MonoBehaviour
 
         public User() { }
 
-        public User(string username, string storedPassword, string email, int age, int gold, int level, List<string> ownedUnits, List<int> ownedUnitsLevels, string profilePictureURL = "")
+        public User(string username, string storedPassword, string email, int age, int gold, int level, List<string> ownedUnits, List<int> ownedUnitsLevels, string profilePictureURL = "https://res.cloudinary.com/dtl29wsay/image/upload/v1755016948/epvmfob9g36skxoiyevz.png", int wins = 0)
         {
             Username = username;
             StoredPassword = storedPassword;
@@ -43,7 +49,8 @@ public class databaseManager : MonoBehaviour
             OwnedUnits = ownedUnits ?? new List<string>();
             OwnedUnitsLevels = ownedUnitsLevels ?? new List<int>();
             LoadOut = ownedUnits ?? new List<string>();
-            ProfilePictureURL = profilePictureURL ?? "";
+            ProfilePictureURL = profilePictureURL ?? "https://res.cloudinary.com/dtl29wsay/image/upload/v1755016948/epvmfob9g36skxoiyevz.png";
+            Wins = wins;
         }
     }
 
@@ -70,15 +77,20 @@ public class databaseManager : MonoBehaviour
     [Header("Screen Panels")]
     public GameObject loginPanel;
     public GameObject signupPanel;
+    public GameObject guestLoginPanel;
 
     [Header("Switch Buttons")]
     public Button switchToLoginButton;
     public Button switchToSignupButton;
+    public Button switchToGuestLoginButton;
 
     [Header("Login UI")]
     public TMP_InputField loginEmailInput;
     public TMP_InputField loginPasswordInput;
     public Button loginButton;
+
+    [Header("Guest UI")]
+    public Button guestLoginButton;
 
     [Header("Signup UI")]
     public TMP_InputField signupUsernameInput;
@@ -103,34 +115,119 @@ public class databaseManager : MonoBehaviour
     [Header("Messages")]
     public TextMeshProUGUI errorText;
 
+    [Header("AutoLogin")]
+
+    public TextMeshProUGUI AutoLoginStatus;
+
+
     private string selectedImagePath = "";
     private Texture2D selectedImageTexture;
     private User currentUserData;
 
-    private void Awake()
+    // private void Awake()
+    // {
+    //     FirebaseApp.CheckAndFixDependenciesAsync().ContinueWith(task =>
+    //     {
+    //         dependencyStatus = task.Result;
+    //         if (dependencyStatus == DependencyStatus.Available)
+    //         {
+    //             Debug.Log("<color=purple>[databaseManager] Starting Firebase initialization...</color>");
+    //             InitializeFirebase();
+    //             Debug.Log("<color=red>[databaseManager] Firebase dependencies resolved and initializing...</color>");
+    //             UnityEngine.WSA.Application.InvokeOnAppThread(() =>
+    //             {
+    //                 TryAutoLogin();
+    //             }, false);
+    //         }
+    //         else
+    //         {
+    //             Debug.LogError($"Firebase dependencies not resolved: {dependencyStatus}");
+    //         }
+    //     });
+
+    // }
+
+    public void SetUpDataBase()
     {
-        FirebaseApp.CheckAndFixDependenciesAsync().ContinueWith(task =>
-        {
-            dependencyStatus = task.Result;
-            if (dependencyStatus == DependencyStatus.Available)
+        FirebaseApp.CheckAndFixDependenciesAsync()
+            .ContinueWithOnMainThread(task =>
             {
-                InitializeFirebase();
+                dependencyStatus = task.Result;
+                if (dependencyStatus == DependencyStatus.Available)
+                {
+                    Debug.Log("<color=purple>[databaseManager] Starting Firebase initialization...</color>");
+                    InitializeFirebase();
+                    Debug.Log("<color=red>[databaseManager] Firebase dependencies resolved and initializing...</color>");
+                    TryAutoLogin();
+                }
+                else
+                {
+                    Debug.LogError($"Firebase dependencies not resolved: {dependencyStatus}");
+                }
+            });
+    }
+
+    private string savedEmail = "";
+    private string savedPassword = "";
+
+    private string savedUserName = "";
+
+    public bool canAutoLogin = false;
+
+
+    private void TryAutoLogin()
+    {
+        Debug.Log("<color=green>[databaseManager] TryAutoLogin called</color>");
+        try
+        {
+            savedEmail = PlayerPrefs.GetString("SavedEmail", "");
+            savedPassword = PlayerPrefs.GetString("SavedPassword", "");
+            savedUserName = PlayerPrefs.GetString("UserName", "");
+
+
+            if (!string.IsNullOrEmpty(savedEmail) && !string.IsNullOrEmpty(savedPassword))
+            {
+                // Debug.Log("<color=blue>[databaseManager] Saved credentials found. Email: " + savedEmail + "</color>");
+                // StartCoroutine(LoginAsync(savedEmail, savedPassword));\
+                AutoLoginStatus.text = "User Found : " + savedUserName;
+                canAutoLogin = true;
             }
             else
             {
-                Debug.LogError($"Firebase dependencies not resolved: {dependencyStatus}");
+                Debug.Log("<color=blue>[databaseManager] Saved credentials Not found</color>");
+                AutoLoginStatus.text = "No User Found";
+
+                canAutoLogin = false;
             }
-        });
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError("[databaseManager] PlayerPrefs read error: " + ex);
+        }
     }
+
+    public void LoginHelper()
+    {
+        if (string.IsNullOrEmpty(savedEmail) || string.IsNullOrEmpty(savedPassword))
+        {
+            errorText.text = "No saved credentials found.";
+            return;
+        }
+        StartCoroutine(LoginAsync(savedEmail, savedPassword));
+    }
+
 
     private void Start()
     {
         loginButton.onClick.AddListener(Login);
         signupButton.onClick.AddListener(Register);
+        guestLoginButton.onClick.AddListener(GuestLogin);
         switchToLoginButton.onClick.AddListener(SwitchToLoginScreen);
         switchToSignupButton.onClick.AddListener(SwitchToSignupScreen);
+        switchToGuestLoginButton.onClick.AddListener(SwitchToGuestLoginScreen);
         selectProfilePictureButton.onClick.AddListener(SelectProfilePicture);
 
+        SwitchToLoginScreen();
         ClearUI();
     }
 
@@ -298,8 +395,6 @@ public class databaseManager : MonoBehaviour
         byte[] imageData = selectedImageTexture.EncodeToPNG();
         WWWForm form = new WWWForm();
 
-        cloudinaryCloudName = "dtl29wsay";
-        cloudinaryUploadPreset = "profile_pictures";
         form.AddField("upload_preset", cloudinaryUploadPreset);
         form.AddBinaryData("file", imageData, "profile_picture.png", "image/png");
 
@@ -375,6 +470,29 @@ public class databaseManager : MonoBehaviour
         }
     }
 
+    public void GuestLogin()
+    {
+        SetButtonsInteractable(false);
+        if (UserDataManager.Instance == null)
+        {
+            Debug.LogError("UserDataManager.Instance is null!");
+            return;
+        }
+        User guestUser = new User(
+            "GuestUser",
+            "guest_password",
+            "<guest_email>",
+            18, // example guest age
+            500,
+            1,
+            new() { "CraneRon", "KenDuong", "Ronny-V" },
+            new() { 1, 1, 1 },
+            "https://res.cloudinary.com/dtl29wsay/image/upload/v1755016948/epvmfob9g36skxoiyevz.png"
+        );
+        UpdateUserDataManager(guestUser, false);
+        StartCoroutine(LoadGameSceneAfterDelay());
+    }
+
     public void Login()
     {
         if (isProcessing)
@@ -429,6 +547,11 @@ public class databaseManager : MonoBehaviour
         user = loggedInUser;
         Debug.Log($"Login successful: {user.Email}, UID: {user.UserId}");
         errorText.text = "Login successful! Loading data...";
+
+        PlayerPrefs.SetString("SavedEmail", loginEmailInput.text);
+        PlayerPrefs.SetString("SavedPassword", loginPasswordInput.text);
+        PlayerPrefs.SetString("UserName", user.DisplayName ?? user.Email);
+        PlayerPrefs.Save();
     }
 
     public void Register()
@@ -520,8 +643,9 @@ public class databaseManager : MonoBehaviour
     {
         List<string> defaultUnits = new List<string> { "CraneRon", "KenDuong", "Ronny-V" };
         List<int> defaultUnitsLevels = new List<int> { 1, 1, 1 };
+        int defaultWins = 0;
 
-        User newUser = new User(name, password, email, int.Parse(age), 100, 1, defaultUnits, defaultUnitsLevels, profilePictureURL);
+        User newUser = new User(name, password, email, int.Parse(age), 100, 1, defaultUnits, defaultUnitsLevels, profilePictureURL, defaultWins);
 
         string json = JsonUtility.ToJson(newUser);
         var dbTask = dbRef.Child("users").Child(user.UserId).SetRawJsonValueAsync(json);
@@ -536,6 +660,11 @@ public class databaseManager : MonoBehaviour
         {
             Debug.Log("User data saved successfully!");
             uploadStatusText.text = "Account created successfully!";
+
+            PlayerPrefs.SetString("SavedEmail", email);
+            PlayerPrefs.SetString("SavedPassword", password);
+            PlayerPrefs.SetString("UserName", name);
+            PlayerPrefs.Save();
 
             // Clear selected image after successful signup
             ClearSelectedImage();
@@ -624,15 +753,17 @@ public class databaseManager : MonoBehaviour
         StartCoroutine(LoadGameSceneAfterDelay());
     }
 
-    private void UpdateUserDataManager(User user)
+    private void UpdateUserDataManager(User user, bool isLoggedIn = true)
     {
         UserDataManager.Instance.UserName = user.Username;
         UserDataManager.Instance.Gold = user.Gold;
         UserDataManager.Instance.Level = user.Level;
-        UserDataManager.Instance.OwnedUnits = user.OwnedUnits ?? new List<string>();
-        UserDataManager.Instance.OwnedUnitsLevels = user.OwnedUnitsLevels ?? new List<int>();
-        UserDataManager.Instance.LoadOut = user.LoadOut ?? new List<string>();
+        UserDataManager.Instance.OwnedUnits = user.OwnedUnits ?? new List<string> { "CraneRon", "KenDuong", "Ronny-V" };
+        UserDataManager.Instance.OwnedUnitsLevels = user.OwnedUnitsLevels ?? new List<int> { 1, 1, 1 };
+        UserDataManager.Instance.LoadOut = user.LoadOut ?? new List<string> { "CraneRon", "KenDuong", "Ronny-V" };
         UserDataManager.Instance.ProfilePictureURL = user.ProfilePictureURL ?? "";
+        UserDataManager.Instance.Wins = user.Wins;
+        UserDataManager.Instance.isLoggedIn = isLoggedIn;
     }
 
     private IEnumerator LoadGameSceneAfterDelay()
@@ -648,6 +779,8 @@ public class databaseManager : MonoBehaviour
         if (switchToLoginButton != null) switchToLoginButton.interactable = interactable;
         if (switchToSignupButton != null) switchToSignupButton.interactable = interactable;
         if (selectProfilePictureButton != null) selectProfilePictureButton.interactable = interactable;
+        if (switchToGuestLoginButton != null) switchToGuestLoginButton.interactable = interactable;
+        if (guestLoginButton != null) guestLoginButton.interactable = interactable;
     }
 
     private string GetFirebaseErrorMessage(System.AggregateException exception)
@@ -700,6 +833,7 @@ public class databaseManager : MonoBehaviour
     {
         loginPanel.SetActive(true);
         signupPanel.SetActive(false);
+        guestLoginPanel.SetActive(false);
         errorText.text = "Please enter your login credentials.";
         ClearInputFields();
     }
@@ -708,10 +842,20 @@ public class databaseManager : MonoBehaviour
     {
         signupPanel.SetActive(true);
         loginPanel.SetActive(false);
+        guestLoginPanel.SetActive(false);
         errorText.text = "Please fill in your signup details.";
 
         ClearSelectedImage();
         uploadStatusText.text = "";
+        ClearInputFields();
+    }
+
+    private void SwitchToGuestLoginScreen()
+    {
+        guestLoginPanel.SetActive(true);
+        loginPanel.SetActive(false);
+        signupPanel.SetActive(false);
+        errorText.text = "Press Start.";
         ClearInputFields();
     }
 
@@ -724,5 +868,22 @@ public class databaseManager : MonoBehaviour
         if (signupAgeInput != null) signupAgeInput.text = "";
         if (signupPasswordInput != null) signupPasswordInput.text = "";
         if (signupConfirmPasswordInput != null) signupConfirmPasswordInput.text = "";
+    }
+
+    public void Logout()
+    {
+        Debug.Log("Logging out...");
+        auth.SignOut();
+
+        AutoLoginStatus.text = "No User Found";
+        canAutoLogin = false;
+
+        PlayerPrefs.DeleteKey("SavedEmail");
+        PlayerPrefs.DeleteKey("SavedPassword");
+        PlayerPrefs.DeleteKey("UserName");
+        PlayerPrefs.Save();
+
+        ClearUI();
+        SwitchToLoginScreen();
     }
 }
