@@ -289,31 +289,20 @@ public class databaseManager : MonoBehaviour
 #if UNITY_ANDROID || UNITY_IOS
     private void SelectProfilePictureMobile()
     {
-        if (NativeGallery.CanSelectImageFromGallery())
+        // Simply call GetImageFromGallery - it handles permissions internally
+        NativeGallery.GetImageFromGallery((path) =>
         {
-            NativeGallery.Permission permission = NativeGallery.GetImageFromGallery((path) =>
+            if (path != null)
             {
-                if (path != null)
-                {
-                    selectedImagePath = path;
-                    LoadImagePreview(selectedImagePath);
-                    uploadStatusText.text = "Image selected for profile picture.";
-                }
-                else
-                {
-                    uploadStatusText.text = "Image selection cancelled.";
-                }
-            }, "Select Profile Picture", "image/*");
-
-            if (permission == NativeGallery.Permission.Denied)
-            {
-                uploadStatusText.text = "Gallery access denied.";
+                selectedImagePath = path;
+                LoadImagePreview(selectedImagePath);
+                uploadStatusText.text = "Image selected for profile picture.";
             }
-        }
-        else
-        {
-            uploadStatusText.text = "Cannot access gallery.";
-        }
+            else
+            {
+                uploadStatusText.text = "Image selection cancelled or permission denied.";
+            }
+        }, "Select Profile Picture", "image/*");
     }
 #endif
 
