@@ -401,8 +401,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   IsFrontline: 1
   animator: {fileID: 421411530726951080}
+  spriteRenderer: {fileID: 0}
   healthText: {fileID: 1261805138760670162}
   speedText: {fileID: 5086295901838768304}
+  bodyRotate: {fileID: 0}
+  battleSystem: {fileID: 0}
+  battleSystemTournament: {fileID: 0}
   unitStats: {fileID: 0}
   isLookingTowardsRight: 1
   originalPosition: {x: 0, y: 0, z: 0}
@@ -426,6 +430,7 @@ MonoBehaviour:
   baseCritChance: 10
   critMultiplier: 1.5
   baseDodgeChance: 0
+  price: 200
   growth:
     HPPerLevel: 3
     AttackPerLevel: 3
@@ -454,7 +459,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &4769636915045133477
 RectTransform:
   m_ObjectHideFlags: 0

@@ -76,11 +76,8 @@ public class UnitCombatHandler : MonoBehaviour
         if (bodyRotate != null)
         {
             Debug.Log($"Setting body rotation for {name}");
-            bodyRotate.transform.localRotation = Quaternion.Euler(
-                bodyRotate.transform.localRotation.eulerAngles.x,
-                180f,
-                bodyRotate.transform.localRotation.eulerAngles.z
-            );
+            bool isTowardsRight = transform.position.x > 0;
+            bodyRotate.transform.localScale = (isLookingTowardsRight == isTowardsRight) ? new Vector3(-1, bodyRotate.transform.localScale.y, bodyRotate.transform.localScale.z) : new Vector3(1, bodyRotate.transform.localScale.y, bodyRotate.transform.localScale.z);   
         }
 
         unitStats.ResetHP(); // Ensure currentHP is set at spawn

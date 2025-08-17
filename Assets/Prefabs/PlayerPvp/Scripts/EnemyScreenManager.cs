@@ -175,7 +175,7 @@ public class EnemyScreenManager : MonoBehaviour
         if (FirebaseUpdater.Instance != null)
         {
             FirebaseUpdater.Instance.OnOpponentsDataReady += OnOpponentsDataReceived;
-            FirebaseUpdater.Instance.OnLeaderBoardDataReady += OnLeaderBoardDataReceived;
+            // FirebaseUpdater.Instance.OnLeaderBoardDataReady += OnLeaderBoardDataReceived;
 
         }
 
@@ -234,7 +234,7 @@ public class EnemyScreenManager : MonoBehaviour
         if (FirebaseUpdater.Instance != null)
         {
             // Simply call GetAllOpponents - the result will come through the event
-            FirebaseUpdater.Instance.GetAllOpponents(6);
+            FirebaseUpdater.Instance.GetAllOpponents();
         }
         else
         {
@@ -244,6 +244,7 @@ public class EnemyScreenManager : MonoBehaviour
 
     public void SetOpponentsData(List<FirebaseUpdater.OpponentData> opponents)
     {
+        Debug.Log($"<color=green>SetOpponentsData called with {opponents.Count} opponents</color>");
         currentOpponents = opponents;
         isOpponentDataLoaded = true;
         CacheOpponentSlotComponents();
@@ -352,16 +353,6 @@ public class EnemyScreenManager : MonoBehaviour
                 {
                     opponentSlotTexts[i].text = opponent.username;
                 }
-
-                // Set first unit image (only if opponent has units)
-                // if (opponentSlotImages[i] != null && opponent.loadout.Count > 0 && !string.IsNullOrEmpty(opponent.loadout[0]))
-                // {
-                //     Sprite unitSprite = GetUnitSprite(opponent.loadout[0]);
-                //     if (unitSprite != null)
-                //     {
-                //         opponentSlotImages[i].sprite = unitSprite;
-                //     }
-                // }
 
                 if (opponentSlotImages[i] != null && !string.IsNullOrEmpty(opponent.profilePictureUrl))
                 {
@@ -866,6 +857,6 @@ public class EnemyScreenManager : MonoBehaviour
 
     public void OnLeaderBoardDataReceived(List<FirebaseUpdater.OpponentData> leaderBoardList)
     {
-        SetLeaderBoardData(leaderBoardList);
+        // SetLeaderBoardData(leaderBoardList);
     }
 }

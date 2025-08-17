@@ -457,6 +457,8 @@ public class BattleSystem : MonoBehaviour
 
     public void ResetBattleScene()
     {
+
+        FirebaseUpdater.Instance.GetAllOpponents();
         if (TournamentMode)
         {
             TournamentManager.Instance.EndTournament();

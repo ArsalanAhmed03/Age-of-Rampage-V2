@@ -125,16 +125,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6501f65dfadb29d4fbbc4d9e33142059, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  HP: 80
-  AttackDamage: 20
-  Speed: 15
-  CriticalChance: 10
-  CriticalDamageMultiplier: 1.5
-  DodgeChance: 5
   IsFrontline: 1
   animator: {fileID: 2982802303449670463}
+  spriteRenderer: {fileID: 0}
   healthText: {fileID: 4011081305781054740}
   speedText: {fileID: 352838863637791325}
+  bodyRotate: {fileID: 0}
+  battleSystem: {fileID: 0}
+  battleSystemTournament: {fileID: 0}
+  unitStats: {fileID: 0}
   isLookingTowardsRight: 0
   originalPosition: {x: 0, y: 0, z: 0}
   attackDistance: 0.8
@@ -153,9 +152,11 @@ MonoBehaviour:
   baseHP: 5
   baseAttack: 2
   baseSpeed: 1
+  UpgradeCost: 100
   baseCritChance: 10
   critMultiplier: 1.5
   baseDodgeChance: 0
+  price: 200
   growth:
     HPPerLevel: 3
     AttackPerLevel: 2
@@ -165,6 +166,7 @@ MonoBehaviour:
     DodgeChancePerLevel: 0
   currentLevel: 1
   maxLevel: 20
+  currentHP: 0
 --- !u!1 &4992686509123592395
 GameObject:
   m_ObjectHideFlags: 0
@@ -457,7 +459,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &8662118002601816918
 RectTransform:
   m_ObjectHideFlags: 0

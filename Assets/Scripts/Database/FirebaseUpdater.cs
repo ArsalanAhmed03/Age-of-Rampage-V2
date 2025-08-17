@@ -4,6 +4,7 @@ using Firebase;
 using Firebase.Auth;
 using Firebase.Database;
 using Firebase.Extensions;
+using UnityEngine.AI;
 
 public class FirebaseUpdater : MonoBehaviour
 {
@@ -64,7 +65,12 @@ public class FirebaseUpdater : MonoBehaviour
         {
             Debug.Log("User logged in: " + user.UserId);
             GetAllOpponents(); // Fetch opponents when user is logged in
+            StartOpponentPolling();
+
+            // CancelInvoke(nameof(GetAllOpponents)); // prevent duplicates
+            // InvokeRepeating(nameof(GetAllOpponents), 20f, 20f);
         }
+
     }
 
     private void OnDestroy()
@@ -347,10 +353,31 @@ public class FirebaseUpdater : MonoBehaviour
 
     public List<OpponentData> leaderBoardList = new List<OpponentData>();
 
+    public void StartOpponentPolling()
+    {
+        CancelInvoke(nameof(GetAllOpponents));
+        InvokeRepeating(nameof(GetAllOpponents), 0f, 20f);
+    }
 
-    public void GetAllOpponents(int maxResults = 6)
+    public void StopOpponentPolling()
+    {
+        CancelInvoke(nameof(GetAllOpponents));
+    }
+
+    bool poolingStarted = false;
+
+    public void GetAllOpponents()
     {
         if (!IsUserValid()) return;
+
+        if (poolingStarted) return;
+
+        poolingStarted = true;
+
+        opponents.Clear();
+        leaderBoardList.Clear();
+
+        Debug.Log("<color=red>Fetching all opponents from Firebase...</color>");
 
         dbRef.Child("users").GetValueAsync().ContinueWithOnMainThread(task =>
         {
@@ -376,14 +403,6 @@ public class FirebaseUpdater : MonoBehaviour
 
             foreach (DataSnapshot userSnapshot in snapshot.Children)
             {
-
-                // Check if we've reached the maximum number of results
-                if (opponents.Count >= maxResults)
-                {
-                    Debug.Log($"Total opponents found: {opponents.Count} (limited to {maxResults} max results)");
-                    OnOpponentsDataReady?.Invoke(opponents);
-                    // break;
-                }
 
                 string userId = userSnapshot.Key;
 
@@ -481,10 +500,9 @@ public class FirebaseUpdater : MonoBehaviour
 
                     OpponentData opponent = new OpponentData(userId, username, level, loadout, loadoutLevels, profilePictureUrl, wins);
 
-                    if (opponents.Count < maxResults)
-                        opponents.Add(opponent);
+                    opponents.Add(opponent);
 
-                    leaderBoardList.Add(opponent);
+                    // leaderBoardList.Add(opponent);
 
                     Debug.Log($"Found opponent: {username} (Level {level}) - Loadout: {string.Join(", ", loadout)} - Levels: {string.Join(", ", loadoutLevels)}");
                 }
@@ -494,20 +512,23 @@ public class FirebaseUpdater : MonoBehaviour
                 }
             }
 
-            Debug.Log($"Total opponents found: {leaderBoardList.Count}");
+            poolingStarted = false;
+            OnOpponentsDataReady?.Invoke(opponents);
+
+            // Debug.Log($"Total opponents found: {leaderBoardList.Count}");
 
             // Notify listeners that opponents data is ready
             // OnOpponentsDataReady?.Invoke(opponents);
 
-            leaderBoardList.Sort((a, b) => b.level.CompareTo(a.level));
+            // leaderBoardList.Sort((a, b) => b.level.CompareTo(a.level));
 
-            if (leaderBoardList.Count > 10)
-            {
-                leaderBoardList = leaderBoardList.GetRange(0, 10);
-            }
+            // if (leaderBoardList.Count > 10)
+            // {
+            //     leaderBoardList = leaderBoardList.GetRange(0, 10);
+            // }
 
 
-            OnLeaderBoardDataReady?.Invoke(leaderBoardList);
+            // OnLeaderBoardDataReady?.Invoke(leaderBoardList);
 
             // Data is now available in the 'opponents' list
             // You can process this data as needed

@@ -156,7 +156,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &5622311996001112543
 RectTransform:
   m_ObjectHideFlags: 0
@@ -860,6 +860,8 @@ MonoBehaviour:
   healthText: {fileID: 4509657694226871283}
   speedText: {fileID: 6798583697925644786}
   bodyRotate: {fileID: 9004148123409344353}
+  battleSystem: {fileID: 0}
+  battleSystemTournament: {fileID: 0}
   unitStats: {fileID: 0}
   isLookingTowardsRight: 0
   originalPosition: {x: 0, y: 0, z: 0}

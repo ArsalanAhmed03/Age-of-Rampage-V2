@@ -556,7 +556,8 @@ public class databaseManager : MonoBehaviour
             signupEmailInput.text,
             signupPasswordInput.text,
             signupConfirmPasswordInput.text,
-            signupAgeInput.text));
+            signupAgeInput.text)
+            );
     }
 
     private IEnumerator RegisterAsync(string name, string email, string password, string confirmPassword, string age)
@@ -589,6 +590,10 @@ public class databaseManager : MonoBehaviour
                 SetButtonsInteractable(true);
                 yield break;
             }
+        }
+        else
+        {
+            profilePictureURL = "https://res.cloudinary.com/dtl29wsay/image/upload/v1755416199/xnofhbrurygsaotspe1c.png";
         }
 
         // Create user account

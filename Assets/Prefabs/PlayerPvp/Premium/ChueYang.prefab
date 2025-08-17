@@ -1853,6 +1853,9 @@ MonoBehaviour:
   spriteRenderer: {fileID: 0}
   healthText: {fileID: 172042614952903242}
   speedText: {fileID: 4730614162210320781}
+  bodyRotate: {fileID: 2741576296134673991}
+  battleSystem: {fileID: 0}
+  battleSystemTournament: {fileID: 0}
   unitStats: {fileID: 0}
   isLookingTowardsRight: 1
   originalPosition: {x: 0, y: 0, z: 0}
@@ -3535,7 +3538,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &9168676300958495999
 RectTransform:
   m_ObjectHideFlags: 0
