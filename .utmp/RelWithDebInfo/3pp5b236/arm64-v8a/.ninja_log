@@ -1,12 +1,12 @@
 # ninja log v5
-95	470	7771414595291914	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	9b5fb3c1bcb955ef
-472	818	7771414598393237	D:/UnityLibrary/Age-of-Rampage-V2/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/3pp5b236/obj/arm64-v8a/libswappywrapper.so	a23287a68a0734a2
-27	3104	7771414621630545	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	da0dc22362d33942
-38	3126	7771414621772311	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	d14f725b008d8246
-18	3229	7771414622579707	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	70295d4f635f6950
-76	3242	7771414623019626	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	98a599483f8dc90a
-0	3418	7771414624488155	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	ded00ec7fdb7da22
-62	3617	7771414626787155	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	6f4181489d77e33d
-49	3772	7771414628375480	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	32e911ed008e0039
-9	3909	7771414629711865	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	95dd5f3446ecabb6
-3909	4028	7771414630975596	D:/UnityLibrary/Age-of-Rampage-V2/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/3pp5b236/obj/arm64-v8a/libgame.so	d0bb7eeaeafa4936
+147	1241	7788453199871434	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	9b5fb3c1bcb955ef
+1244	1578	7788453203420549	D:/UnityLibrary/Age-of-Rampage-V2/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/3pp5b236/obj/arm64-v8a/libswappywrapper.so	a23287a68a0734a2
+62	12973	7788453317574934	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	da0dc22362d33942
+51	13014	7788453317985541	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	d14f725b008d8246
+30	13037	7788453318217163	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	70295d4f635f6950
+97	13048	7788453318300187	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	98a599483f8dc90a
+2	13123	7788453319080149	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	ded00ec7fdb7da22
+41	13450	7788453322312593	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	32e911ed008e0039
+77	13573	7788453323603118	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	6f4181489d77e33d
+15	13592	7788453323777443	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	95dd5f3446ecabb6
+13592	13713	7788453325019854	D:/UnityLibrary/Age-of-Rampage-V2/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/3pp5b236/obj/arm64-v8a/libgame.so	d0bb7eeaeafa4936

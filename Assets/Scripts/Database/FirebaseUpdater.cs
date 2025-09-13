@@ -368,7 +368,7 @@ public class FirebaseUpdater : MonoBehaviour
 
     public void GetAllOpponents()
     {
-        if (!IsUserValid()) return;
+        // if (!IsUserValid()) return;
 
         if (poolingStarted) return;
 
