@@ -292,4 +292,16 @@ public class PlayerStatsManager : MonoBehaviour
             StartCoroutine(LoadProfilePictureFromURL(ProfilePictureURL));
         }
     }
+
+    public int GetUnitLevel(string name)
+    {
+        for (int i = 0; i < OwnedUnits.Count; i++)
+        {
+            if (OwnedUnits[i] == name)
+            {
+                return OwnedUnitsLevels[i];
+            }
+        }
+        return 1;
+    }
 }

@@ -222,8 +222,8 @@ MonoBehaviour:
     y: 0
     width: 413.33325
     height: 478
-  m_MinSize: {x: 275, y: 50}
-  m_MaxSize: {x: 4000, y: 4000}
+  m_MinSize: {x: 276, y: 76}
+  m_MaxSize: {x: 4001, y: 4026}
   m_ActualView: {fileID: 17}
   m_Panes:
   - {fileID: 17}
@@ -279,7 +279,7 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 556.6667
+    y: 502
     width: 1706.6666
     height: 309.3333
   m_SerializedDataModeController:
@@ -315,7 +315,7 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 78.66667
+    y: 24
     width: 304.33334
     height: 452
   m_SerializedDataModeController:
@@ -954,7 +954,7 @@ MonoBehaviour:
   m_Position:
     m_Target: {x: 1689.9172, y: 602.5393, z: -2.9143171}
     speed: 2
-    m_Value: {x: 1681.715, y: 588.85205, z: -2.5932689}
+    m_Value: {x: 1689.9172, y: 602.5393, z: -2.9143171}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -1006,7 +1006,7 @@ MonoBehaviour:
   m_Size:
     m_Target: 745.5436
     speed: 2
-    m_Value: 713.43884
+    m_Value: 745.5436
   m_Ortho:
     m_Target: 1
     speed: 2
@@ -1731,8 +1731,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Simulator\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 305.33334
-    y: 78.66667
+    x: 306.33334
+    y: 24
     width: 986
     height: 452
   m_SerializedDataModeController:
@@ -1762,7 +1762,7 @@ MonoBehaviour:
   m_UseMipMap: 0
   m_SimulatorState:
     controlPanelVisible: 0
-    controlPanelWidth: 0
+    controlPanelWidth: NaN
     controlPanelFoldoutKeys:
     - UnityEditor.AdaptivePerformance.Editor.AdaptivePerformanceUIExtension
     - UnityEditor.AdaptivePerformance.Google.Android.Editor.AdaptivePerformanceGoogleUIExtension
@@ -1807,8 +1807,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Inspector\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 1293.3334
-    y: 78.66667
+    x: 1294.3334
+    y: 24
     width: 412.33325
     height: 452
   m_SerializedDataModeController:
@@ -1940,7 +1940,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 206.66669}
     m_SelectedIDs: 18220100
     m_LastClickedID: 74264
-    m_ExpandedIDs: 00000000302101009a210100142201001a2201002c2201002e22010030220100322201002c3c010000ca9a3bffffff7f
+    m_ExpandedIDs: 0000000030210100
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 

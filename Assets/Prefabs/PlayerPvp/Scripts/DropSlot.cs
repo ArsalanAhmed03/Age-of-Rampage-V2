@@ -1,6 +1,8 @@
+using Unity.Multiplayer.Tools.NetStats;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using TMPro;
 
 public class DropSlot : MonoBehaviour, IDropHandler
 {
@@ -11,6 +13,7 @@ public class DropSlot : MonoBehaviour, IDropHandler
     private GameObject assignedPrefab;
     private SelectionScreenManager manager;
     public Image AreanaSlotImage;
+    public TextMeshProUGUI slotLabel;
 
     private void Start()
     {
@@ -58,6 +61,13 @@ public class DropSlot : MonoBehaviour, IDropHandler
             AreanaSlotImage.color = Color.white;
         }
 
+        if(slotLabel != null)
+        {
+
+            int level = UserDataManager.Instance.GetUnitLevelByName(unitPrefab.name);
+            slotLabel.text = unitPrefab.name + "\nLvl: " + level.ToString();
+        }
+
         if (removeButton != null)
             removeButton.gameObject.SetActive(true);
 
@@ -80,6 +90,10 @@ public class DropSlot : MonoBehaviour, IDropHandler
         AreanaSlotImage.sprite = SourceImage;
         iconImage.color = new Color32(0x6D, 0x6D, 0x6D, 0xFF);
         AreanaSlotImage.color = new Color32(0x6D, 0x6D, 0x6D, 0xFF);
+        if(slotLabel != null)
+        {
+            slotLabel.text = "";
+        }
 
 
         manager.ReAddUnitToGrid(assignedPrefab);

@@ -474,6 +474,14 @@ public class SelectionScreenManager : MonoBehaviour
         {
             drag.SetPrefab(unit);
         }
+
+        UnitClickHandler clickHandler = btn.GetComponent<UnitClickHandler>();
+        if (clickHandler != null)
+        {
+            clickHandler.unitStats = unit.GetComponent<UnitStats>();
+            clickHandler.unitSprite = unitSprite;
+            clickHandler.UpgradeScreenUI = UpgradeScreenUI;
+        }
     }
 
 }

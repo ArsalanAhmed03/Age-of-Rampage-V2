@@ -33,4 +33,14 @@ public class UserDataManager : MonoBehaviour
     {
         return OwnedUnits.IndexOf(unitName);
     }
+
+    public int GetUnitLevelByName(string unitName)
+    {
+        int index = GetUnitIndexByName(unitName);
+        if (index != -1 && index < OwnedUnitsLevels.Count)
+        {
+            return OwnedUnitsLevels[index];
+        }
+        return 0; // Unit not found or level not available
+    }
 }
