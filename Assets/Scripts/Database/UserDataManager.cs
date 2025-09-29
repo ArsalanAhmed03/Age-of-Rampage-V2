@@ -10,6 +10,7 @@ public class UserDataManager : MonoBehaviour
     public int Level;
     public List<string> OwnedUnits = new List<string>();
     public List<int> OwnedUnitsLevels = new List<int>();
+    public List<int> OwnedUnitsCounts = new List<int>();
     public List<string> LoadOut = new List<string>();
     public string ProfilePictureURL;
     public int Wins;

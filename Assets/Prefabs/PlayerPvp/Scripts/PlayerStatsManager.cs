@@ -40,6 +40,8 @@ public class PlayerStatsManager : MonoBehaviour
     // Placeholder for future: units owned and their levels
     public List<string> OwnedUnits = new List<string>();
     public List<int> OwnedUnitsLevels = new List<int>();
+
+    public List<int> OwnedUnitsCounts = new List<int>();
     public List<string> LoadOut = new List<string>();
 
     private void Logout()
@@ -219,6 +221,7 @@ public class PlayerStatsManager : MonoBehaviour
             // Set owned units from UserDataManager
             OwnedUnits = UserDataManager.Instance.OwnedUnits;
             OwnedUnitsLevels = UserDataManager.Instance.OwnedUnitsLevels;
+            OwnedUnitsCounts = UserDataManager.Instance.OwnedUnitsCounts;
             LoadOut = UserDataManager.Instance.LoadOut;
 
             // Add owned units to UnlockedUnits in SelectionScreenManager if not already present
@@ -250,7 +253,7 @@ public class PlayerStatsManager : MonoBehaviour
                                 Debug.LogWarning($"UnitStats component not found on prefab '{unitName}'.");
                             }
                             SelectionScreenManager.Instance.UnlockedUnits.Add(prefab);
-                            SelectionScreenManager.Instance.availableUnits.Remove(prefab);
+                            // SelectionScreenManager.Instance.availableUnits.Remove(prefab); TEST IF NEEDED
                         }
                         else
                         {

@@ -156,27 +156,28 @@ public class FirebaseUpdater : MonoBehaviour
         });
     }
 
-    public void UpdateOwnedUnits(List<string> ownedUnits, List<int> unitLevels)
+    public void UpdateOwnedUnits(List<string> ownedUnits, List<int> unitLevels, List<int> ownedUnitsCounts)
     {
         if (!IsUserValid()) return;
 
         // Validate input lists
-        if (ownedUnits == null || unitLevels == null)
+        if (ownedUnits == null || unitLevels == null || ownedUnitsCounts == null)
         {
-            Debug.LogError("Owned units or unit levels list is null");
+            Debug.LogError("Owned units, unit levels, or unit counts list is null");
             return;
         }
 
-        if (ownedUnits.Count != unitLevels.Count)
+        if (ownedUnits.Count != unitLevels.Count || ownedUnits.Count != ownedUnitsCounts.Count)
         {
-            Debug.LogError("Owned units and unit levels lists must have the same length");
+            Debug.LogError("Owned units, unit levels, and unit counts lists must have the same length");
             return;
         }
 
         Dictionary<string, object> updates = new Dictionary<string, object>
         {
             { "OwnedUnits", ownedUnits },
-            { "OwnedUnitsLevels", unitLevels }
+            { "OwnedUnitsLevels", unitLevels },
+            { "OwnedUnitsCounts", ownedUnitsCounts }
         };
 
         dbRef.Child("users").Child(user.UserId).UpdateChildrenAsync(updates).ContinueWithOnMainThread(task =>
@@ -220,15 +221,18 @@ public class FirebaseUpdater : MonoBehaviour
         if (UserDataManager.Instance.OwnedUnits.Contains(unitName))
         {
             Debug.LogWarning($"Unit {unitName} already owned");
+            UserDataManager.Instance.OwnedUnitsCounts[UserDataManager.Instance.GetUnitIndexByName(unitName)]++;
+            UpdateOwnedUnits(UserDataManager.Instance.OwnedUnits, UserDataManager.Instance.OwnedUnitsLevels, UserDataManager.Instance.OwnedUnitsCounts);
             return;
         }
 
         // Modify local copy
         UserDataManager.Instance.OwnedUnits.Add(unitName);
         UserDataManager.Instance.OwnedUnitsLevels.Add(level);
+        UserDataManager.Instance.OwnedUnitsCounts.Add(1);
 
         // Push to database
-        UpdateOwnedUnits(UserDataManager.Instance.OwnedUnits, UserDataManager.Instance.OwnedUnitsLevels);
+        UpdateOwnedUnits(UserDataManager.Instance.OwnedUnits, UserDataManager.Instance.OwnedUnitsLevels, UserDataManager.Instance.OwnedUnitsCounts);
     }
 
     public void UpdateUnitLevel(string unitName, int newLevel)
@@ -258,7 +262,37 @@ public class FirebaseUpdater : MonoBehaviour
         }
 
         UserDataManager.Instance.OwnedUnitsLevels[index] = newLevel;
-        UpdateOwnedUnits(UserDataManager.Instance.OwnedUnits, UserDataManager.Instance.OwnedUnitsLevels);
+        UpdateOwnedUnits(UserDataManager.Instance.OwnedUnits, UserDataManager.Instance.OwnedUnitsLevels, UserDataManager.Instance.OwnedUnitsCounts);
+    }
+
+    public void UpdateUnitCount(string unitName, int newCount)
+    {
+        if (!IsUserValid()) return;
+
+        int index = UserDataManager.Instance.GetUnitIndexByName(unitName);
+
+        // Validate input
+        if (newCount < 1)
+        {
+            Debug.LogError("Unit count must be at least 1");
+            return;
+        }
+
+        // Check if UserDataManager exists
+        if (UserDataManager.Instance == null)
+        {
+            Debug.LogError("UserDataManager.Instance is null");
+            return;
+        }
+
+        if (index < 0 || index >= UserDataManager.Instance.OwnedUnitsCounts.Count)
+        {
+            Debug.LogError($"Invalid unit index: {index}. Valid range: 0-{UserDataManager.Instance.OwnedUnitsCounts.Count - 1}");
+            return;
+        }
+
+        UserDataManager.Instance.OwnedUnitsCounts[index] = newCount;
+        UpdateOwnedUnits(UserDataManager.Instance.OwnedUnits, UserDataManager.Instance.OwnedUnitsLevels, UserDataManager.Instance.OwnedUnitsCounts);
     }
 
     // Helper method to check if user is valid
@@ -292,8 +326,9 @@ public class FirebaseUpdater : MonoBehaviour
 
         UserDataManager.Instance.OwnedUnits.RemoveAt(index);
         UserDataManager.Instance.OwnedUnitsLevels.RemoveAt(index);
+        UserDataManager.Instance.OwnedUnitsCounts.RemoveAt(index);
 
-        UpdateOwnedUnits(UserDataManager.Instance.OwnedUnits, UserDataManager.Instance.OwnedUnitsLevels);
+        UpdateOwnedUnits(UserDataManager.Instance.OwnedUnits, UserDataManager.Instance.OwnedUnitsLevels, UserDataManager.Instance.OwnedUnitsCounts);
     }
 
     public void UpdateLoadout(List<string> loadout)
@@ -450,6 +485,7 @@ public class FirebaseUpdater : MonoBehaviour
                     List<int> loadoutLevels = new List<int>();
                     List<string> ownedUnits = new List<string>();
                     List<int> ownedUnitsLevels = new List<int>();
+                    List<int> ownedUnitsCounts = new List<int>();
 
                     // Get owned units
                     DataSnapshot ownedUnitsSnapshot = userSnapshot.Child("OwnedUnits");
@@ -475,6 +511,22 @@ public class FirebaseUpdater : MonoBehaviour
                             else
                             {
                                 ownedUnitsLevels.Add(1); // Default level
+                            }
+                        }
+                    }
+
+                    DataSnapshot ownedUnitsCountsSnapshot = userSnapshot.Child("OwnedUnitsCounts");
+                    if (ownedUnitsCountsSnapshot.Exists)
+                    {
+                        foreach (DataSnapshot countItem in ownedUnitsCountsSnapshot.Children)
+                        {
+                            if (int.TryParse(countItem.Value?.ToString(), out int unitCount))
+                            {
+                                ownedUnitsCounts.Add(unitCount);
+                            }
+                            else
+                            {
+                                ownedUnitsCounts.Add(0);
                             }
                         }
                     }

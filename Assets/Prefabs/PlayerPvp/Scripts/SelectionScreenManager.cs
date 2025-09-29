@@ -277,24 +277,24 @@ public class SelectionScreenManager : MonoBehaviour
         Debug.Log($"Buying unit: {name}");
         FirebaseUpdater.Instance.AddUnit(unitToBuy.name);
 
-        if (unitToBuy != null)
+        if (unitToBuy != null && !UnlockedUnits.Contains(unitToBuy))
         {
-            availableUnits.Remove(unitToBuy);
+            // availableUnits.Remove(unitToBuy); TEST IF NEEDED
             UnlockedUnits.Add(unitToBuy);
 
             // Remove the bought unit's button from the shop grid
-            foreach (Transform child in shopGrid)
-            {
-                UnitClickHandler clickHandler = child.GetComponent<UnitClickHandler>();
-                if (clickHandler != null && clickHandler.unitStats != null && child.gameObject.activeSelf)
-                {
-                    if (clickHandler.unitStats.gameObject.name == name)
-                    {
-                        Destroy(child.gameObject);
-                        break;
-                    }
-                }
-            }
+            // foreach (Transform child in shopGrid)
+            // {
+            //     UnitClickHandler clickHandler = child.GetComponent<UnitClickHandler>();
+            //     if (clickHandler != null && clickHandler.unitStats != null && child.gameObject.activeSelf)
+            //     {
+            //         if (clickHandler.unitStats.gameObject.name == name)
+            //         {
+            //             Destroy(child.gameObject);
+            //             break;
+            //         }
+            //     }
+            // }
 
             // Create button for unlocked unit and add to selection grid
             GameObject btn = Instantiate(unitButtonPrefab, unitSelectionGrid);
@@ -319,6 +319,10 @@ public class SelectionScreenManager : MonoBehaviour
                 clickHandlerNew.unitSprite = unitSprite;
                 clickHandlerNew.UpgradeScreenUI = UpgradeScreenUI;
             }
+        }
+        else
+        {
+            //TODO UPDATE COUNT IN LOADOUT 
         }
     }
 
