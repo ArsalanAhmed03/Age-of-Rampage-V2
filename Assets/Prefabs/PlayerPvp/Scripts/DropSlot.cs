@@ -88,8 +88,8 @@ public class DropSlot : MonoBehaviour, IDropHandler
 
         iconImage.sprite = SourceImage;
         AreanaSlotImage.sprite = SourceImage;
-        iconImage.color = new Color32(0x6D, 0x6D, 0x6D, 0xFF);
-        AreanaSlotImage.color = new Color32(0x6D, 0x6D, 0x6D, 0xFF);
+        iconImage.color = new Color32(0x6D, 0x6D, 0x6D, 0x7E);
+        AreanaSlotImage.color = new Color32(0x6D, 0x6D, 0x6D, 0x7E);
         if(slotLabel != null)
         {
             slotLabel.text = "";

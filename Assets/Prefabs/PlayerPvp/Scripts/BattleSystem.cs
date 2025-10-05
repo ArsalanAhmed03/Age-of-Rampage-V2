@@ -310,14 +310,13 @@ public class BattleSystem : MonoBehaviour
             Debug.Log("Enemy team wins!");
             if (!TournamentMode)
             {
-                if (PlayerStatsManager.Instance.PlayerLevel > 1)
+                if (UserDataManager.Instance.Level > 1)
                 {
-                    PlayerStatsManager.Instance.PlayerLevel--;
+                    UserDataManager.Instance.Level--;
                 }
 
                 // Update enemy level when they win
-                UpdateEnemyLevel(1);
-                UpdateEnemyWins(1);
+                UpdateEnemyStats(1, 1, 1);
             }
 
             lostScreen.SetActive(true);
@@ -329,11 +328,12 @@ public class BattleSystem : MonoBehaviour
             Debug.Log("Player team wins!");
             if (!TournamentMode)
             {
-                PlayerStatsManager.Instance.PlayerLevel++;
-                PlayerStatsManager.Instance.Wins++;
+                UserDataManager.Instance.Level += 1;
+                UserDataManager.Instance.Wins += 1;
+                UserDataManager.Instance.Gold += 1;
 
                 // Update enemy level when they lose
-                UpdateEnemyLevel(-1);
+                UpdateEnemyStats(-1, 0, 0);
             }
 
             wonScreen.SetActive(true);
@@ -346,9 +346,9 @@ public class BattleSystem : MonoBehaviour
     }
 
     // Method to update the enemy's level based on battle outcome
-    private void UpdateEnemyLevel(int levelChange)
-    {
-        Debug.Log($"UpdateEnemyLevel called with levelChange: {levelChange}");
+    private void UpdateEnemyStats(int levelChange, int winChange, int goldChange)
+        {
+            Debug.Log($"UpdateEnemyStats called with levelChange: {levelChange}, winChange: {winChange}, gold: {goldChange}");
 
         // Find the EnemyScreenManager in the scene
         EnemyScreenManager enemyManager = FindFirstObjectByType<EnemyScreenManager>();
@@ -358,36 +358,12 @@ public class BattleSystem : MonoBehaviour
             Debug.Log($"Found EnemyScreenManager. HasSelectedOpponent: {enemyManager.HasSelectedOpponent}");
             if (enemyManager.HasSelectedOpponent)
             {
-                enemyManager.UpdateSelectedOpponentLevel(levelChange);
+                enemyManager.UpdateSelectedOpponentInfo(levelChange, winChange, goldChange);
+                // enemyManager.UpdateSelectedOpponentLosses(newLosses);
             }
             else
             {
-                Debug.LogWarning("EnemyScreenManager found but no selected opponent to update level for");
-            }
-        }
-        else
-        {
-            Debug.LogError("EnemyScreenManager not found in scene");
-        }
-    }
-
-    private void UpdateEnemyWins(int newWins)
-    {
-        Debug.Log($"UpdateEnemyWins called with newWins: {newWins}");
-
-        // Find the EnemyScreenManager in the scene
-        EnemyScreenManager enemyManager = FindFirstObjectByType<EnemyScreenManager>();
-
-        if (enemyManager != null)
-        {
-            Debug.Log($"Found EnemyScreenManager. HasSelectedOpponent: {enemyManager.HasSelectedOpponent}");
-            if (enemyManager.HasSelectedOpponent)
-            {
-                enemyManager.UpdateSelectedOpponentWins(newWins);
-            }
-            else
-            {
-                Debug.LogWarning("EnemyScreenManager found but no selected opponent to update wins for");
+                Debug.LogWarning("EnemyScreenManager found but no selected opponent to update stats for");
             }
         }
         else

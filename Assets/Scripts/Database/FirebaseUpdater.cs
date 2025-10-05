@@ -265,6 +265,36 @@ public class FirebaseUpdater : MonoBehaviour
         UpdateOwnedUnits(UserDataManager.Instance.OwnedUnits, UserDataManager.Instance.OwnedUnitsLevels, UserDataManager.Instance.OwnedUnitsCounts);
     }
 
+    public void UpdateUnitCS(string unitName, int newCS)
+    {
+        if (!IsUserValid()) return;
+
+        int index = UserDataManager.Instance.GetUnitIndexByName(unitName);
+
+        // Validate input
+        if (newCS < 1)
+        {
+            Debug.LogError("Unit CS must be at least 1");
+            return;
+        }
+
+        // Check if UserDataManager exists
+        if (UserDataManager.Instance == null)
+        {
+            Debug.LogError("UserDataManager.Instance is null");
+            return;
+        }
+
+        if (index < 0 || index >= UserDataManager.Instance.OwnedUnitsCounts.Count)
+        {
+            Debug.LogError($"Invalid unit index: {index}. Valid range: 0-{UserDataManager.Instance.OwnedUnitsCounts.Count - 1}");
+            return;
+        }
+
+        UserDataManager.Instance.OwnedUnitsCounts[index] = newCS;
+        UpdateOwnedUnits(UserDataManager.Instance.OwnedUnits, UserDataManager.Instance.OwnedUnitsLevels, UserDataManager.Instance.OwnedUnitsCounts);
+    }
+
     public void UpdateUnitCount(string unitName, int newCount)
     {
         if (!IsUserValid()) return;
@@ -366,13 +396,14 @@ public class FirebaseUpdater : MonoBehaviour
         public string userId;
         public string username;
         public int level;
+        public int gold;
         public List<string> loadout;
         public List<int> loadoutLevels;
         public string profilePictureUrl;
 
         public int wins;
 
-        public OpponentData(string userId, string username, int level, List<string> loadout, List<int> loadoutLevels, string profilePictureUrl, int wins)
+        public OpponentData(string userId, string username, int level, List<string> loadout, List<int> loadoutLevels, string profilePictureUrl, int wins, int gold)
         {
             this.userId = userId;
             this.username = username;
@@ -381,6 +412,7 @@ public class FirebaseUpdater : MonoBehaviour
             this.loadoutLevels = loadoutLevels ?? new List<int>();
             this.profilePictureUrl = profilePictureUrl;
             this.wins = wins;
+            this.gold = gold;
         }
     }
 
@@ -452,6 +484,7 @@ public class FirebaseUpdater : MonoBehaviour
 
                     int level = 1;
                     int wins = 1;
+                    int gold = 0;
 
                     if (userSnapshot.Child("Level").Value != null)
                     {
@@ -466,6 +499,14 @@ public class FirebaseUpdater : MonoBehaviour
                         if (int.TryParse(userSnapshot.Child("Wins").Value.ToString(), out int parsedWins))
                         {
                             wins = parsedWins;
+                        }
+                    }
+
+                    if (userSnapshot.Child("Gold").Value != null)
+                    {
+                        if (int.TryParse(userSnapshot.Child("Gold").Value.ToString(), out int parsedGold))
+                        {
+                            gold = parsedGold;
                         }
                     }
 
@@ -550,13 +591,13 @@ public class FirebaseUpdater : MonoBehaviour
                     // Get profile picture URL
                     string profilePictureUrl = userSnapshot.Child("ProfilePictureURL").Value?.ToString() ?? "";
 
-                    OpponentData opponent = new OpponentData(userId, username, level, loadout, loadoutLevels, profilePictureUrl, wins);
+                    OpponentData opponent = new OpponentData(userId, username, level, loadout, loadoutLevels, profilePictureUrl, wins, gold);
 
                     opponents.Add(opponent);
 
                     // leaderBoardList.Add(opponent);
 
-                    Debug.Log($"Found opponent: {username} (Level {level}) - Loadout: {string.Join(", ", loadout)} - Levels: {string.Join(", ", loadoutLevels)}");
+                    Debug.Log($"Found opponent: {username} (Level {level}) - Loadout: {string.Join(", ", loadout)} - Levels: {string.Join(", ", loadoutLevels)} - Gold: {gold}");
                 }
                 catch (System.Exception e)
                 {

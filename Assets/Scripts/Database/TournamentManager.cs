@@ -237,9 +237,9 @@ public class TournamentManager : MonoBehaviour
     {
         string uid = auth.CurrentUser.UserId;
 
-        // Calculate total unit level from PlayerStatsManager.OwnedUnitsLevels
+        // Calculate total unit level from UserDataManager.Instance.OwnedUnitsLevels
         int totalUnitLevel = 0;
-        foreach (int level in PlayerStatsManager.Instance.OwnedUnitsLevels)
+        foreach (int level in UserDataManager.Instance.OwnedUnitsLevels)
         {
             totalUnitLevel += level;
         }

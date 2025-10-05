@@ -28,6 +28,8 @@ public class UnitStats : MonoBehaviour
 
     [Header("Level")]
     public int currentLevel = 1;
+
+    public int currentCS = 1;
     public int maxLevel = 20;
 
     public int currentHP; // Tracks actual HP during battle
@@ -48,8 +50,8 @@ public class UnitStats : MonoBehaviour
     {
         return new UnitStatsData
         {
-            HP = baseHP + growth.HPPerLevel * (currentLevel - 1),
-            Attack = baseAttack + growth.AttackPerLevel * (currentLevel - 1),
+            HP = baseHP + (currentCS * 2) + growth.HPPerLevel * (currentLevel - 1),
+            Attack = baseAttack + (currentCS * 1) + growth.AttackPerLevel * (currentLevel - 1),
             Speed = baseSpeed + growth.SpeedPerLevel * (currentLevel - 1),
             CritChance = baseCritChance + growth.CritChancePerLevel * (currentLevel - 1),
             CritMultiplier = critMultiplier + growth.CritDamagePerLevel * (currentLevel - 1),

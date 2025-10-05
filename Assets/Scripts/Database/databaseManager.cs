@@ -32,13 +32,14 @@ public class databaseManager : MonoBehaviour
         public string ProfilePictureURL;
         public List<string> OwnedUnits;
         public List<int> OwnedUnitsLevels;
+        public List<int> OwnedUnitsCS;
         public List<int> OwnedUnitsCounts;
         public List<string> LoadOut;
 
         public User() { }
 
         public User(string username, string storedPassword, string email, int age, int gold, int level,
-            List<string> ownedUnits, List<int> ownedUnitsLevels, List<int> ownedUnitsCounts, string profilePictureURL, int wins = 0)
+            List<string> ownedUnits, List<int> ownedUnitsLevels, List<int> ownedUnitsCS, List<int> ownedUnitsCounts, string profilePictureURL, int wins = 0)
         {
             Username = username;
             StoredPassword = storedPassword;
@@ -48,6 +49,7 @@ public class databaseManager : MonoBehaviour
             Level = level;
             OwnedUnits = ownedUnits ?? new List<string>();
             OwnedUnitsLevels = ownedUnitsLevels ?? new List<int>();
+            OwnedUnitsCS = ownedUnitsCS ?? new List<int>();
             OwnedUnitsCounts = ownedUnitsCounts ?? new List<int>();
             LoadOut = ownedUnits ?? new List<string>();
             ProfilePictureURL = string.IsNullOrEmpty(profilePictureURL)
@@ -279,6 +281,7 @@ public class databaseManager : MonoBehaviour
         var newUser = new User(name, password, email, int.Parse(age), 100, 1,
             new List<string> { "CraneRon", "KenDuong", "Ronny-V" },
             new List<int> { 1, 1, 1 },
+            new List<int> { 0, 0, 0 },
             new List<int> { 1, 1, 1 },
             profilePictureURL);
 
@@ -316,9 +319,6 @@ public class databaseManager : MonoBehaviour
         currentOwnedUnitsText.text = "Units: " + string.Join(", ", user.OwnedUnits ?? new List<string>());
         errorText.text = "Welcome, " + user.Username + "!";
 
-        if (!string.IsNullOrEmpty(user.ProfilePictureURL))
-            StartCoroutine(LoadProfilePictureFromURL(user.ProfilePictureURL));
-
         if (UserDataManager.Instance != null)
             UpdateUserDataManager(user);
         StartCoroutine(LoadGameSceneAfterDelay());
@@ -331,6 +331,7 @@ public class databaseManager : MonoBehaviour
         UserDataManager.Instance.Level = user.Level;
         UserDataManager.Instance.OwnedUnits = user.OwnedUnits ?? new List<string> { "CraneRon", "KenDuong", "Ronny-V" };
         UserDataManager.Instance.OwnedUnitsLevels = user.OwnedUnitsLevels ?? new List<int> { 1, 1, 1 };
+        UserDataManager.Instance.OwnedUnitsCS = user.OwnedUnitsCS ?? new List<int> { 0, 0, 0 };
         UserDataManager.Instance.OwnedUnitsCounts = user.OwnedUnitsCounts ?? new List<int> { 1, 1, 1 };
         UserDataManager.Instance.LoadOut = user.LoadOut ?? new List<string> { "CraneRon", "KenDuong", "Ronny-V" };
         UserDataManager.Instance.ProfilePictureURL = user.ProfilePictureURL ?? "";
@@ -347,6 +348,7 @@ public class databaseManager : MonoBehaviour
         User guestUser = new User("GuestUser", "guest_password", "<guest_email>", 18, 500, 1,
             new List<string> { "CraneRon", "KenDuong", "Ronny-V" },
             new List<int> { 1, 1, 1 },
+            new List<int> { 0, 0, 0 },
             new List<int> { 1, 1, 1 },
             "https://res.cloudinary.com/dtl29wsay/image/upload/v1755016948/epvmfob9g36skxoiyevz.png");
 
@@ -368,21 +370,6 @@ public class databaseManager : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
         isProcessing = false; SetButtonsInteractable(true);
         SceneManager.LoadScene("Pvp");
-    }
-
-    private IEnumerator LoadProfilePictureFromURL(string imageUrl)
-    {
-        using (UnityWebRequest request = UnityWebRequestTexture.GetTexture(imageUrl))
-        {
-            request.timeout = 15;
-            yield return request.SendWebRequest();
-            if (request.result == UnityWebRequest.Result.Success)
-            {
-                Texture2D texture = ((DownloadHandlerTexture)request.downloadHandler).texture;
-                currentProfilePicture.sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-                currentProfilePicture.gameObject.SetActive(true);
-            }
-        }
     }
 
     private void SetButtonsInteractable(bool interactable)

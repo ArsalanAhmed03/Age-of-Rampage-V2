@@ -6,15 +6,59 @@ public class UserDataManager : MonoBehaviour
     public static UserDataManager Instance;
 
     public string UserName;
-    public int Gold;
-    public int Level;
+
+    public int gold;
+    public int level;
+    public int wins;
     public List<string> OwnedUnits = new List<string>();
     public List<int> OwnedUnitsLevels = new List<int>();
+    public List<int> OwnedUnitsCS = new List<int>();
+
     public List<int> OwnedUnitsCounts = new List<int>();
     public List<string> LoadOut = new List<string>();
     public string ProfilePictureURL;
-    public int Wins;
     public bool isLoggedIn = false;
+
+    public int Gold
+    {
+        get => gold;
+        set
+        {
+            gold = value;
+            if (isLoggedIn)
+            {
+                FirebaseUpdater.Instance.UpdateUserGold(gold);
+                PlayerStatsManager.Instance?.UpdateCoinsUI();
+            }
+        }
+    }
+
+    public int Level
+    {
+        get => level;
+        set
+        {
+            level = value;
+            if (isLoggedIn)
+            {
+                FirebaseUpdater.Instance.UpdateUserLevel(level);
+                PlayerStatsManager.Instance?.UpdateLevelUI();
+            }
+        }
+    }
+
+    public int Wins
+    {
+        get => wins;
+        set
+        {
+            wins = value;
+            if (isLoggedIn)
+            {
+                FirebaseUpdater.Instance.UpdateUserWins(wins);
+            }
+        }
+    }
 
 
     void Awake()
@@ -44,4 +88,6 @@ public class UserDataManager : MonoBehaviour
         }
         return 0; // Unit not found or level not available
     }
+
+
 }

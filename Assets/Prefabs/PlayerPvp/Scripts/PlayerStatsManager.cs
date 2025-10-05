@@ -21,14 +21,6 @@ public class PlayerStatsManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    // Player main stats
-    [SerializeField] private string playerName = "Player1";
-    [SerializeField] private int playerLevel = 1;
-    [SerializeField] private int currentCoins = 1000;
-    [SerializeField] private int wins = 0;
-
-    [SerializeField] private string profilePictureURL = ""; // Add this field
-
     // References for displaying player level and coins using TextMeshPro
     [SerializeField] private TextMeshProUGUI playerLevelText;
     [SerializeField] private TextMeshProUGUI coinsText;
@@ -38,72 +30,15 @@ public class PlayerStatsManager : MonoBehaviour
     [SerializeField] Button LogoutButton;
 
     // Placeholder for future: units owned and their levels
-    public List<string> OwnedUnits = new List<string>();
-    public List<int> OwnedUnitsLevels = new List<int>();
+    // public List<string> OwnedUnits = new List<string>();
+    // public List<int> OwnedUnitsLevels = new List<int>();
 
-    public List<int> OwnedUnitsCounts = new List<int>();
-    public List<string> LoadOut = new List<string>();
+    // public List<int> OwnedUnitsCounts = new List<int>();
+    // public List<string> LoadOut = new List<string>();
 
     private void Logout()
     {
         FirebaseUpdater.Instance.Logout();
-    }
-
-    // Properties for accessing and modifying stats
-    public string PlayerName
-    {
-        get => playerName;
-        set
-        {
-            playerName = value;
-            UpdatePlayerNameUI(); // Update UI when name changes
-        }
-    }
-
-    public int PlayerLevel
-    {
-        get => playerLevel;
-        set
-        {
-            playerLevel = value;
-            FirebaseUpdater.Instance.UpdateUserLevel(playerLevel);
-            UpdateLevelUI();
-        }
-    }
-
-    public int Wins
-    {
-        get => wins;
-        set
-        {
-            wins = value;
-            FirebaseUpdater.Instance.UpdateUserWins(wins);
-            // UpdateWinsUI();
-        }
-    }
-
-    public int CurrentCoins
-    {
-        get => currentCoins;
-        set
-        {
-            currentCoins = value;
-            FirebaseUpdater.Instance.UpdateUserGold(currentCoins);
-            UpdateCoinsUI();
-        }
-    }
-
-    public string ProfilePictureURL
-    {
-        get => profilePictureURL;
-        set
-        {
-            profilePictureURL = value; // Fixed: was causing infinite recursion
-            if (profilePicture != null && !string.IsNullOrEmpty(value))
-            {
-                StartCoroutine(LoadProfilePictureFromURL(value));
-            }
-        }
     }
 
     private IEnumerator LoadProfilePictureFromURL(string imageUrl)
@@ -134,39 +69,40 @@ public class PlayerStatsManager : MonoBehaviour
         }
     }
 
-    public List<string> GetOwnedUnits()
-    {
-        return OwnedUnits;
-    }
+    // public List<string> GetOwnedUnits()
+    // {
+    //     return OwnedUnits;
+    // }
 
-    public void AddUnit(string unitName, int level)
-    {
-        OwnedUnits.Add(unitName);
-        OwnedUnitsLevels.Add(level);
-    }
+    // public void AddUnit(string unitName, int level)
+    // {
+    //     OwnedUnits.Add(unitName);
+    //     OwnedUnitsLevels.Add(level);
+    //     OwnedUnitsCounts.Add(0);
+    // }
 
-    public void SetUnitLevel(string unitName, int level)
-    {
-        for (int i = 0; i < OwnedUnits.Count; i++)
-        {
-            if (OwnedUnits[i] == unitName)
-            {
-                OwnedUnitsLevels[i] = level;
-                break;
-            }
-        }
-    }
+    // public void SetUnitLevel(string unitName, int level)
+    // {
+    //     for (int i = 0; i < OwnedUnits.Count; i++)
+    //     {
+    //         if (OwnedUnits[i] == unitName)
+    //         {
+    //             OwnedUnitsLevels[i] = level;
+    //             break;
+    //         }
+    //     }
+    // }
 
     public void AddCoins(int amount)
     {
-        CurrentCoins += amount;
+        UserDataManager.Instance.Gold += amount;
     }
 
     public bool SpendCoins(int amount)
     {
-        if (currentCoins >= amount)
+        if (UserDataManager.Instance.Gold >= amount)
         {
-            CurrentCoins -= amount;
+            UserDataManager.Instance.Gold -= amount;
             return true;
         }
         return false;
@@ -174,35 +110,35 @@ public class PlayerStatsManager : MonoBehaviour
 
     public void LevelUp()
     {
-        PlayerLevel++;
+        UserDataManager.Instance.Level += 1;
     }
 
     public void SetLevel(int level)
     {
-        PlayerLevel = level;
+        UserDataManager.Instance.Level = level;
     }
 
     public void SetPlayerName(string name)
     {
-        PlayerName = name; // Use the property instead of direct field assignment
+        UserDataManager.Instance.UserName = name;
     }
 
-    private void UpdateLevelUI()
+    public void UpdateLevelUI()
     {
         if (playerLevelText != null)
-            playerLevelText.text = $"{playerLevel}";
+            playerLevelText.text = $"{UserDataManager.Instance.Level}";
     }
 
-    private void UpdateCoinsUI()
+    public void UpdateCoinsUI()
     {
         if (coinsText != null)
-            coinsText.text = $"{currentCoins}";
+            coinsText.text = $"{UserDataManager.Instance.Gold}";
     }
 
-    private void UpdatePlayerNameUI()
+    public void UpdatePlayerNameUI()
     {
         if (PlayerNameText != null)
-            PlayerNameText.text = playerName;
+            PlayerNameText.text = UserDataManager.Instance.UserName;
     }
 
     void Start()
@@ -213,59 +149,55 @@ public class PlayerStatsManager : MonoBehaviour
         {
             // Use properties to ensure UI updates
             LogoutButton.onClick.AddListener(Logout);
-            PlayerName = UserDataManager.Instance.UserName;
-            PlayerLevel = UserDataManager.Instance.Level;
-            CurrentCoins = UserDataManager.Instance.Gold;
-            ProfilePictureURL = UserDataManager.Instance.ProfilePictureURL;
 
             // Set owned units from UserDataManager
-            OwnedUnits = UserDataManager.Instance.OwnedUnits;
-            OwnedUnitsLevels = UserDataManager.Instance.OwnedUnitsLevels;
-            OwnedUnitsCounts = UserDataManager.Instance.OwnedUnitsCounts;
-            LoadOut = UserDataManager.Instance.LoadOut;
+            // OwnedUnits = UserDataManager.Instance.OwnedUnits;
+            // OwnedUnitsLevels = UserDataManager.Instance.OwnedUnitsLevels;
+            // OwnedUnitsCounts = UserDataManager.Instance.OwnedUnitsCounts;
+            // LoadOut = UserDataManager.Instance.LoadOut;
 
             // Add owned units to UnlockedUnits in SelectionScreenManager if not already present
-            if (SelectionScreenManager.Instance != null)
-            {
-                for (int i = 0; i < OwnedUnits.Count; i++)
-                {
-                    string unitName = OwnedUnits[i];
-                    // Check if unit is already unlocked
-                    bool alreadyUnlocked = SelectionScreenManager.Instance.UnlockedUnits.Exists(
-                    prefab => prefab.name == unitName
-                    );
-                    if (!alreadyUnlocked)
-                    {
-                        // Find the prefab in AvailableUnits by name
-                        GameObject prefab = SelectionScreenManager.Instance.availableUnits.Find(
-                            go => go.name == unitName
-                        );
-                        if (prefab != null)
-                        {
-                            UnitStats unitStats = prefab.GetComponent<UnitStats>();
-                            if (unitStats != null)
-                            {
-                                Debug.Log($"Unlocking unit '{unitName}' at level {OwnedUnitsLevels[i]}.");
-                                unitStats.currentLevel = OwnedUnitsLevels[i];
-                            }
-                            else
-                            {
-                                Debug.LogWarning($"UnitStats component not found on prefab '{unitName}'.");
-                            }
-                            SelectionScreenManager.Instance.UnlockedUnits.Add(prefab);
-                            // SelectionScreenManager.Instance.availableUnits.Remove(prefab); TEST IF NEEDED
-                        }
-                        else
-                        {
-                            Debug.LogWarning($"Prefab for unit '{unitName}' not found in AvailableUnits.");
-                        }
-                    }
-                }
-            }
-            else
-            {
-                Debug.LogWarning("SelectionScreenManager.Instance is null!");
-            }
+            //     if (SelectionScreenManager.Instance != null)
+            //     {
+            //         for (int i = 0; i < OwnedUnits.Count; i++)
+            //         {
+            //             string unitName = OwnedUnits[i];
+            //             // Check if unit is already unlocked
+            //             bool alreadyUnlocked = SelectionScreenManager.Instance.UnlockedUnits.Exists(
+            //             prefab => prefab.name == unitName
+            //             );
+            //             if (!alreadyUnlocked)
+            //             {
+            //                 // Find the prefab in AvailableUnits by name
+            //                 GameObject prefab = SelectionScreenManager.Instance.availableUnits.Find(
+            //                     go => go.name == unitName
+            //                 );
+            //                 if (prefab != null)
+            //                 {
+            //                     UnitStats unitStats = prefab.GetComponent<UnitStats>();
+            //                     if (unitStats != null)
+            //                     {
+            //                         Debug.Log($"Unlocking unit '{unitName}' at level {OwnedUnitsLevels[i]}.");
+            //                         unitStats.currentLevel = OwnedUnitsLevels[i];
+            //                     }
+            //                     else
+            //                     {
+            //                         Debug.LogWarning($"UnitStats component not found on prefab '{unitName}'.");
+            //                     }
+            //                     SelectionScreenManager.Instance.UnlockedUnits.Add(prefab);
+            //                     // SelectionScreenManager.Instance.availableUnits.Remove(prefab); TEST IF NEEDED
+            //                 }
+            //                 else
+            //                 {
+            //                     Debug.LogWarning($"Prefab for unit '{unitName}' not found in AvailableUnits.");
+            //                 }
+            //             }
+            //         }
+            //     }
+            //     else
+            //     {
+            //         Debug.LogWarning("SelectionScreenManager.Instance is null!");
+            //     }
         }
         else
         {
@@ -278,11 +210,12 @@ public class PlayerStatsManager : MonoBehaviour
         UpdatePlayerNameUI();
 
         // Load profile picture if available
-        if (!string.IsNullOrEmpty(ProfilePictureURL) && profilePicture != null)
+        if (!string.IsNullOrEmpty(UserDataManager.Instance.ProfilePictureURL) && profilePicture != null)
         {
-            StartCoroutine(LoadProfilePictureFromURL(ProfilePictureURL));
+            StartCoroutine(LoadProfilePictureFromURL(UserDataManager.Instance.ProfilePictureURL));
         }
     }
+
 
     public void RefreshAllUI()
     {
@@ -290,21 +223,21 @@ public class PlayerStatsManager : MonoBehaviour
         UpdateCoinsUI();
         UpdatePlayerNameUI();
 
-        if (!string.IsNullOrEmpty(ProfilePictureURL) && profilePicture != null)
+        if (!string.IsNullOrEmpty(UserDataManager.Instance.ProfilePictureURL) && profilePicture != null)
         {
-            StartCoroutine(LoadProfilePictureFromURL(ProfilePictureURL));
+            StartCoroutine(LoadProfilePictureFromURL(UserDataManager.Instance.ProfilePictureURL));
         }
     }
 
-    public int GetUnitLevel(string name)
-    {
-        for (int i = 0; i < OwnedUnits.Count; i++)
-        {
-            if (OwnedUnits[i] == name)
-            {
-                return OwnedUnitsLevels[i];
-            }
-        }
-        return 1;
-    }
+    // public int GetUnitLevel(string name)
+    // {
+    //     for (int i = 0; i < OwnedUnits.Count; i++)
+    //     {
+    //         if (OwnedUnits[i] == name)
+    //         {
+    //             return OwnedUnitsLevels[i];
+    //         }
+    //     }
+    //     return 1;
+    // }
 }

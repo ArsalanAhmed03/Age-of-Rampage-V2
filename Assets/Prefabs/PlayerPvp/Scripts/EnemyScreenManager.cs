@@ -41,94 +41,84 @@ public class EnemyScreenManager : MonoBehaviour
     public bool HasSelectedOpponent => selectedOpponentIndex >= 0 && selectedOpponentIndex < currentOpponents.Count;
 
     // Method to update the selected opponent's level
-    public void UpdateSelectedOpponentLevel(int levelChange)
+    public void UpdateSelectedOpponentInfo(int levelChange, int winChange, int goldChange)
     {
-        Debug.Log($"UpdateSelectedOpponentLevel called with levelChange: {levelChange}");
-        Debug.Log($"HasSelectedOpponent: {HasSelectedOpponent}, selectedOpponentIndex: {selectedOpponentIndex}, currentOpponents.Count: {currentOpponents.Count}");
+        Debug.Log($"[EnemyScreenManager] UpdateSelectedOpponentInfo called with levelChange: {levelChange}, winChange: {winChange}, goldChange: {goldChange}");
+        Debug.Log($"[EnemyScreenManager] HasSelectedOpponent: {HasSelectedOpponent}, selectedOpponentIndex: {selectedOpponentIndex}, currentOpponents.Count: {currentOpponents.Count}");
 
         if (!HasSelectedOpponent)
         {
-            Debug.LogWarning("No valid selected opponent to update level for");
+            Debug.LogWarning("[EnemyScreenManager] No valid selected opponent to update info for");
+            return;
+        }
+
+        if (selectedOpponentIndex < 0 || selectedOpponentIndex >= currentOpponents.Count)
+        {
+            Debug.LogError($"[EnemyScreenManager] selectedOpponentIndex out of range: {selectedOpponentIndex}");
             return;
         }
 
         FirebaseUpdater.OpponentData selectedOpponent = currentOpponents[selectedOpponentIndex];
+        if (selectedOpponent == null)
+        {
+            Debug.LogError("[EnemyScreenManager] Selected opponent data is null");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(selectedOpponent.userId))
+        {
+            Debug.LogError("[EnemyScreenManager] Selected opponent userId is null or empty");
+            return;
+        }
+
         int oldLevel = selectedOpponent.level;
         int newLevel = Mathf.Max(1, selectedOpponent.level + levelChange);
+        int oldWins = selectedOpponent.wins;
+        int oldGold = selectedOpponent.gold;
 
-        Debug.Log($"Updating {selectedOpponent.username} level from {oldLevel} to {newLevel}");
+        Debug.Log($"[EnemyScreenManager] Updating {selectedOpponent.username} (userId: {selectedOpponent.userId}) level from {oldLevel} to {newLevel}");
 
-        // Update locally first
-        selectedOpponent.level = newLevel;
-
-        // Update UI if the selected enemy menu is visible
-        if (SelectedEnemyMenu != null && SelectedEnemyMenu.activeInHierarchy)
+        if (FirebaseUpdater.Instance == null)
         {
-            if (EnemyLevel != null)
+            Debug.LogError("[EnemyScreenManager] FirebaseUpdater.Instance is null, cannot update opponent info");
+            return;
+        }
+
+        try
+        {
+            selectedOpponent.level = newLevel;
+            StartCoroutine(UpdateUserLevelCoroutine(selectedOpponent.userId, newLevel));
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[EnemyScreenManager] Exception updating user level: {ex}");
+        }
+
+        if (winChange != 0)
+        {
+            try
             {
-                EnemyLevel.text = "Level " + newLevel.ToString();
+                selectedOpponent.wins = oldWins + winChange;
+                StartCoroutine(UpdateUserWinsCoroutine(selectedOpponent.userId, selectedOpponent.wins));
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[EnemyScreenManager] Exception updating user wins: {ex}");
             }
         }
 
-        // Update in Firebase database
-        UpdateOpponentLevelInDatabase(selectedOpponent.userId, newLevel);
-
-        Debug.Log($"Successfully updated {selectedOpponent.username}'s level to {newLevel}");
-    }
-
-    public void UpdateSelectedOpponentWins(int winsChange)
-    {
-        Debug.Log($"UpdateSelectedOpponentWins called with winsChange: {winsChange}");
-
-        if (!HasSelectedOpponent)
+        if (goldChange != 0)
         {
-            Debug.LogWarning("No valid selected opponent to update wins for");
-            return;
+            try
+            {
+                selectedOpponent.gold = oldGold + goldChange;
+                StartCoroutine(UpdateUserGoldCoroutine(selectedOpponent.userId, selectedOpponent.gold));
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[EnemyScreenManager] Exception updating user gold: {ex}");
+            }
         }
-
-        FirebaseUpdater.OpponentData selectedOpponent = currentOpponents[selectedOpponentIndex];
-        int oldWins = selectedOpponent.wins;
-        int newWins = Mathf.Max(0, selectedOpponent.wins + winsChange);
-
-        Debug.Log($"Updating {selectedOpponent.username} wins from {oldWins} to {newWins}");
-
-        // Update locally first
-        selectedOpponent.wins = newWins;
-
-        // Update UI if the selected enemy menu is visible
-        if (SelectedEnemyMenu != null && SelectedEnemyMenu.activeInHierarchy)
-        {
-            // Update the UI elements related to wins
-        }
-
-        // Update in Firebase database
-        UpdateOpponentWinsInDatabase(selectedOpponent.userId, newWins);
-
-        Debug.Log($"Successfully updated {selectedOpponent.username}'s wins to {newWins}");
-    }
-
-    private void UpdateOpponentLevelInDatabase(string userId, int newLevel)
-    {
-        if (FirebaseUpdater.Instance == null)
-        {
-            Debug.LogError("FirebaseUpdater.Instance is null, cannot update opponent level in database");
-            return;
-        }
-
-        // Update the opponent's level in Firebase database
-        StartCoroutine(UpdateUserLevelCoroutine(userId, newLevel));
-    }
-
-    private void UpdateOpponentWinsInDatabase(string userId, int newWins)
-    {
-        if (FirebaseUpdater.Instance == null)
-        {
-            Debug.LogError("FirebaseUpdater.Instance is null, cannot update opponent wins in database");
-            return;
-        }
-
-        // Update the opponent's wins in Firebase database
-        StartCoroutine(UpdateUserWinsCoroutine(userId, newWins));
     }
 
     private System.Collections.IEnumerator UpdateUserLevelCoroutine(string userId, int newLevel)
@@ -169,16 +159,33 @@ public class EnemyScreenManager : MonoBehaviour
         }
     }
 
+    private System.Collections.IEnumerator UpdateUserGoldCoroutine(string userId, int newGold)
+    {
+        // Get Firebase database reference
+        Firebase.Database.DatabaseReference dbRef = Firebase.Database.FirebaseDatabase.DefaultInstance.RootReference;
+
+        var updateTask = dbRef.Child("users").Child(userId).Child("Gold").SetValueAsync(newGold);
+
+        yield return new WaitUntil(() => updateTask.IsCompleted);
+
+        if (updateTask.IsCompletedSuccessfully)
+        {
+            Debug.Log($"Successfully updated user {userId} gold to {newGold} in database");
+        }
+        else if (updateTask.IsFaulted)
+        {
+            Debug.LogError($"Failed to update user {userId} gold in database: {updateTask.Exception?.GetBaseException()}");
+        }
+    }
+
     private void Start()
     {
         // Subscribe to Firebase opponents data event
         if (FirebaseUpdater.Instance != null)
         {
             FirebaseUpdater.Instance.OnOpponentsDataReady += OnOpponentsDataReceived;
-            // FirebaseUpdater.Instance.OnLeaderBoardDataReady += OnLeaderBoardDataReceived;
 
         }
-
         // Set up initial state
         ShowArenaStartScreen();
     }
@@ -583,24 +590,24 @@ public class EnemyScreenManager : MonoBehaviour
             }
 
             // Then check in UnlockedUnits
-            foreach (GameObject unitPrefab in selectionScreenManager.UnlockedUnits)
-            {
-                if (unitPrefab != null && unitPrefab.name == unitName)
-                {
-                    Image unitImage = unitPrefab.GetComponent<Image>();
-                    if (unitImage != null && unitImage.sprite != null)
-                    {
-                        return unitImage.sprite;
-                    }
+            // foreach (GameObject unitPrefab in selectionScreenManager.UnlockedUnits)
+            // {
+            //     if (unitPrefab != null && unitPrefab.name == unitName)
+            //     {
+            //         Image unitImage = unitPrefab.GetComponent<Image>();
+            //         if (unitImage != null && unitImage.sprite != null)
+            //         {
+            //             return unitImage.sprite;
+            //         }
 
-                    // If no Image component, try SpriteRenderer
-                    SpriteRenderer spriteRenderer = unitPrefab.GetComponent<SpriteRenderer>();
-                    if (spriteRenderer != null && spriteRenderer.sprite != null)
-                    {
-                        return spriteRenderer.sprite;
-                    }
-                }
-            }
+            //         // If no Image component, try SpriteRenderer
+            //         SpriteRenderer spriteRenderer = unitPrefab.GetComponent<SpriteRenderer>();
+            //         if (spriteRenderer != null && spriteRenderer.sprite != null)
+            //         {
+            //             return spriteRenderer.sprite;
+            //         }
+            //     }
+            // }
 
             Debug.LogWarning($"Unit sprite not found for: {unitName}");
             return null;
@@ -829,15 +836,6 @@ public class EnemyScreenManager : MonoBehaviour
 
         // Search in availableUnits
         foreach (GameObject unitPrefab in selectionScreenManager.availableUnits)
-        {
-            if (unitPrefab != null && unitPrefab.name == unitName)
-            {
-                return unitPrefab;
-            }
-        }
-
-        // Search in UnlockedUnits
-        foreach (GameObject unitPrefab in selectionScreenManager.UnlockedUnits)
         {
             if (unitPrefab != null && unitPrefab.name == unitName)
             {

@@ -30,7 +30,6 @@ public class SelectionScreenManager : MonoBehaviour
     public GameObject unitShopButtonPrefab;
 
     public List<GameObject> availableUnits;
-    public List<GameObject> UnlockedUnits;
 
     [Header("Loadout Display")]
     public TMP_Text frontlineCountText;
@@ -79,8 +78,8 @@ public class SelectionScreenManager : MonoBehaviour
         List<string> loadoutForSlots = new List<string>();
         for (int i = 0; i < 6; i++)
         {
-            if (i < PlayerStatsManager.Instance.LoadOut.Count)
-                loadoutForSlots.Add(PlayerStatsManager.Instance.LoadOut[i]);
+            if (i < UserDataManager.Instance.LoadOut.Count)
+                loadoutForSlots.Add(UserDataManager.Instance.LoadOut[i]);
             else
                 loadoutForSlots.Add("");
         }
@@ -115,10 +114,10 @@ public class SelectionScreenManager : MonoBehaviour
             }
             FirebaseUpdater.Instance.UpdateLoadout(unitNames);
 
-            // Also update PlayerStatsManager.LoadOut
-            if (PlayerStatsManager.Instance != null)
+            // Also update UserDataManager.LoadOut
+            if (UserDataManager.Instance != null)
             {
-                PlayerStatsManager.Instance.LoadOut = new List<string>(unitNames);
+                UserDataManager.Instance.LoadOut = new List<string>(unitNames);
             }
         }
         else
@@ -194,7 +193,7 @@ public class SelectionScreenManager : MonoBehaviour
         }
 
         List<string> ownedUnits = UserDataManager.Instance?.OwnedUnits ?? new List<string>();
-        
+
 
         // if (ownedUnits.Count == 0) return;
 
@@ -211,7 +210,7 @@ public class SelectionScreenManager : MonoBehaviour
 
         int index = 0;
 
-        foreach (GameObject unit in UnlockedUnits)
+        foreach (GameObject unit in UserDataManager.Instance.OwnedUnits.ConvertAll(name => availableUnits.Find(u => u.name == name)).FindAll(u => u != null))
         {
             GameObject btn = Instantiate(unitButtonPrefab, unitSelectionGrid);
 
@@ -236,7 +235,7 @@ public class SelectionScreenManager : MonoBehaviour
                 clickHandler.UpgradeScreenUI = UpgradeScreenUI;
             }
 
-            if(index <= UserDataManager.Instance.OwnedUnitsCounts.Count - 1)
+            if (index <= UserDataManager.Instance.OwnedUnitsCounts.Count - 1)
             {
                 int count = UserDataManager.Instance.OwnedUnitsCounts[index];
                 TMP_Text countText = btn.GetComponentInChildren<TMP_Text>();
@@ -262,7 +261,7 @@ public class SelectionScreenManager : MonoBehaviour
 
             if (!string.IsNullOrEmpty(unitName))
             {
-                GameObject unitPrefab = UnlockedUnits.Find(u => u.name == unitName);
+                GameObject unitPrefab = availableUnits.Find(u => u.name == unitName);
                 if (unitPrefab != null)
                 {
                     Debug.Log($"Assigning unit '{unitName}' to slot {i}");
@@ -307,10 +306,10 @@ public class SelectionScreenManager : MonoBehaviour
         Debug.Log($"Buying unit: {name}");
         FirebaseUpdater.Instance.AddUnit(unitToBuy.name);
 
-        if (unitToBuy != null && !UnlockedUnits.Contains(unitToBuy))
+        if (unitToBuy != null && UserDataManager.Instance != null && !UserDataManager.Instance.OwnedUnits.Contains(name))
         {
             // availableUnits.Remove(unitToBuy); TEST IF NEEDED
-            UnlockedUnits.Add(unitToBuy);
+            // UserDataManager.Instance.OwnedUnits.Add(unitToBuy);
 
             // Remove the bought unit's button from the shop grid
             // foreach (Transform child in shopGrid)
@@ -416,7 +415,7 @@ public class SelectionScreenManager : MonoBehaviour
             Debug.LogWarning("Please assign either 3 front units, 3 back units, or all 6 units before starting the battle.");
             return;
         }
-        
+
         // Hide Loadout UI, Show Tournament Battle Screen
         loadoutScreen.SetActive(false);
         tournamentBattleScreen.SetActive(true);
@@ -459,7 +458,7 @@ public class SelectionScreenManager : MonoBehaviour
         }
 
         // Recreate unit buttons for unlocked units
-        foreach (GameObject unit in UnlockedUnits)
+        foreach (GameObject unit in UserDataManager.Instance.OwnedUnits.ConvertAll(name => availableUnits.Find(u => u.name == name)).FindAll(u => u != null))
         {
             GameObject btn = Instantiate(unitButtonPrefab, unitSelectionGrid);
 
@@ -482,6 +481,17 @@ public class SelectionScreenManager : MonoBehaviour
                 clickHandler.unitStats = unit.GetComponent<UnitStats>();
                 clickHandler.unitSprite = unitSprite;
                 clickHandler.UpgradeScreenUI = UpgradeScreenUI;
+            }
+            
+            int index = UserDataManager.Instance.OwnedUnits.FindIndex(u => u == unit.name);
+            if (index >= 0 && index <= UserDataManager.Instance.OwnedUnitsCounts.Count - 1)
+            {
+                int count = UserDataManager.Instance.OwnedUnitsCounts[index];
+                TMP_Text countText = btn.GetComponentInChildren<TMP_Text>();
+                if (countText != null)
+                {
+                    countText.text = $"x{count}";
+                }
             }
         }
 
@@ -515,6 +525,18 @@ public class SelectionScreenManager : MonoBehaviour
             clickHandler.unitStats = unit.GetComponent<UnitStats>();
             clickHandler.unitSprite = unitSprite;
             clickHandler.UpgradeScreenUI = UpgradeScreenUI;
+        }
+
+        // Find index of unit in OwnedUnits by name
+        int index = UserDataManager.Instance.OwnedUnits.FindIndex(u => u == unit.name);
+        if (index >= 0 && index <= UserDataManager.Instance.OwnedUnitsCounts.Count - 1)
+        {
+            int count = UserDataManager.Instance.OwnedUnitsCounts[index];
+            TMP_Text countText = btn.GetComponentInChildren<TMP_Text>();
+            if (countText != null)
+            {
+                countText.text = $"x{count}";
+            }
         }
     }
 
