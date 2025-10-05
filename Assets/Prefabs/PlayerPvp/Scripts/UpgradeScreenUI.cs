@@ -6,8 +6,10 @@ public class UpgradeScreenUI : MonoBehaviour
 {
     public TMP_Text nameText;
     public TMP_Text levelText;
+
     public Image unitImage;
     public Button levelUpButton;
+    public Button combineButton;
     public Button closeButton;
 
     [Header("Stat Rows")]
@@ -51,10 +53,10 @@ public class UpgradeScreenUI : MonoBehaviour
         };
 
         nameText.text = currentUnit.name;
-        levelText.text = $"Level: {currentUnit.currentLevel}/{currentUnit.maxLevel}";
+        levelText.text = $"Lvl: {currentUnit.currentLevel}/{currentUnit.maxLevel}";
 
-        SetStatRow(hpRow, "Health", current.HP, next.HP - current.HP);
-        SetStatRow(atkRow, "Attack", current.Attack, next.Attack - current.Attack);
+        SetStatRow(hpRow, "HP", current.HP, next.HP - current.HP);
+        SetStatRow(atkRow, "ATK", current.Attack, next.Attack - current.Attack);
         SetStatRow(spdRow, "Speed", current.Speed, next.Speed - current.Speed);
         // SetStatRow(critRow, "Critical", current.CritChance, next.CritChance - current.CritChance, isPercent: true);
         SetStatRow(critDmgRow, "Crit Dmg", current.CritMultiplier, next.CritMultiplier - current.CritMultiplier, isMultiplier: true);

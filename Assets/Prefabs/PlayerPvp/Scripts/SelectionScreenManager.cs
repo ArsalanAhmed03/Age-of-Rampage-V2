@@ -193,6 +193,24 @@ public class SelectionScreenManager : MonoBehaviour
             }
         }
 
+        List<string> ownedUnits = UserDataManager.Instance?.OwnedUnits ?? new List<string>();
+        
+
+        // if (ownedUnits.Count == 0) return;
+
+        // UnlockedUnits.Clear();
+
+        // foreach (string unitName in ownedUnits)
+        // {
+        //     GameObject prefab = availableUnits.Find(go => go.name == unitName);
+        //     if (prefab != null && !UnlockedUnits.Contains(prefab))
+        //     {
+        //         UnlockedUnits.Add(prefab);
+        //     }
+        // }
+
+        int index = 0;
+
         foreach (GameObject unit in UnlockedUnits)
         {
             GameObject btn = Instantiate(unitButtonPrefab, unitSelectionGrid);
@@ -217,6 +235,18 @@ public class SelectionScreenManager : MonoBehaviour
                 clickHandler.unitSprite = unitSprite;
                 clickHandler.UpgradeScreenUI = UpgradeScreenUI;
             }
+
+            if(index <= UserDataManager.Instance.OwnedUnitsCounts.Count - 1)
+            {
+                int count = UserDataManager.Instance.OwnedUnitsCounts[index];
+                TMP_Text countText = btn.GetComponentInChildren<TMP_Text>();
+                if (countText != null)
+                {
+                    countText.text = $"x{count}";
+                }
+            }
+
+            index++;
         }
     }
 
