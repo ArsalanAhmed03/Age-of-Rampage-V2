@@ -45,10 +45,10 @@ public class UIScreenSlider : MonoBehaviour
         }
 
         RectTransform buyScreentemp = screenContainer.GetChild(screenContainer.childCount - 2) as RectTransform;
-        buyScreentemp.anchoredPosition = new Vector2(0 * screenWidth, 0);
+        buyScreentemp.anchoredPosition = new Vector2(0 * screenWidth, 15);
 
         RectTransform selectionScreentemp = screenContainer.GetChild(screenContainer.childCount - 1) as RectTransform;
-        selectionScreentemp.anchoredPosition = new Vector2(1 * screenWidth, 0);
+        selectionScreentemp.anchoredPosition = new Vector2(1 * screenWidth, 50);
 
         targetPos = screenContainer.anchoredPosition;
     }

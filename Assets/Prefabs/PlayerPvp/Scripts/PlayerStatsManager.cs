@@ -23,6 +23,12 @@ public class PlayerStatsManager : MonoBehaviour
 
     // References for displaying player level and coins using TextMeshPro
     [SerializeField] private TextMeshProUGUI playerLevelText;
+
+    [SerializeField] private TextMeshProUGUI playerFilmText;
+
+    [SerializeField] private TextMeshProUGUI playerFilmBattleText;
+
+
     [SerializeField] private TextMeshProUGUI coinsText;
     [SerializeField] private TextMeshProUGUI PlayerNameText;
     [SerializeField] private Image profilePicture;
@@ -129,6 +135,23 @@ public class PlayerStatsManager : MonoBehaviour
             playerLevelText.text = $"{UserDataManager.Instance.Level}";
     }
 
+    public void UpdateFilmsUI()
+    {
+        Debug.Log($"Updating Films UI");
+        if (UserDataManager.Instance != null)
+        {
+            if (playerFilmText != null)
+            {
+                playerFilmText.text = $"{UserDataManager.Instance.Films}";
+            }
+
+            if (playerFilmBattleText != null)
+            {
+                playerFilmBattleText.text = $"{UserDataManager.Instance.Films}";
+            }
+        }
+    }
+
     public void UpdateCoinsUI()
     {
         if (coinsText != null)
@@ -207,7 +230,27 @@ public class PlayerStatsManager : MonoBehaviour
         // Force UI updates (backup in case properties didn't trigger)
         UpdateLevelUI();
         UpdateCoinsUI();
+        UpdateFilmsUI();
         UpdatePlayerNameUI();
+
+        foreach (string child in UserDataManager.Instance.OwnedUnits)
+        {
+            GameObject unitPrefab = SelectionScreenManager.Instance.availableUnits.Find(
+                go => go.name == child
+            );
+
+            UnitStats unitStats = unitPrefab.GetComponent<UnitStats>();
+
+            if (unitStats != null)
+            {
+                unitStats.currentLevel = UserDataManager.Instance.OwnedUnitsLevels[UserDataManager.Instance.OwnedUnits.IndexOf(child)];
+                unitStats.currentCS = UserDataManager.Instance.OwnedUnitsCS[UserDataManager.Instance.OwnedUnits.IndexOf(child)];
+            }
+            else
+            {
+                Debug.LogWarning($"UnitStats component not found on prefab '{child}'.");
+            }
+        }
 
         // Load profile picture if available
         if (!string.IsNullOrEmpty(UserDataManager.Instance.ProfilePictureURL) && profilePicture != null)
@@ -221,6 +264,7 @@ public class PlayerStatsManager : MonoBehaviour
     {
         UpdateLevelUI();
         UpdateCoinsUI();
+        UpdateFilmsUI();
         UpdatePlayerNameUI();
 
         if (!string.IsNullOrEmpty(UserDataManager.Instance.ProfilePictureURL) && profilePicture != null)

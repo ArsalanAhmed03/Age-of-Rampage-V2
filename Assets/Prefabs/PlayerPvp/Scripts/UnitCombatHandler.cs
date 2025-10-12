@@ -26,6 +26,9 @@ public class UnitCombatHandler : MonoBehaviour
     public Vector3 originalPosition;
     public float attackDistance = 0.8f;
 
+    public string specialAbility = "None";
+    public int extraHealthFromAbility = 0;
+
     private void Awake()
     {
         animator = GetComponentInChildren<Animator>();
@@ -99,6 +102,12 @@ public class UnitCombatHandler : MonoBehaviour
     int originalOrder = 0;
     public void StartAttack()
     {
+        int extraDamage = 0;
+        if(specialAbility.ToLower() == "PowerHouse")
+        {
+            int randomNum = Random.Range(1, 6);
+            extraDamage = unitStats.GetStats().Attack * (randomNum * 3 / 100);
+        }
 
         // Debug.Log($"{gameObject.name} is starting an attack!");
         originalOrder = spriteRenderer.sortingOrder;
@@ -119,8 +128,8 @@ public class UnitCombatHandler : MonoBehaviour
         }
 
         finalDamage = CalculateDamage();
+        finalDamage += extraDamage;
         hasAttacked = false;
-
         StartCoroutine(MoveToTarget(currentTarget));
     }
 
@@ -144,6 +153,11 @@ public class UnitCombatHandler : MonoBehaviour
 
     public void TakeDamage(int incomingDamage, UnitCombatHandler attacker)
     {
+
+        int tempIncomingDamage = incomingDamage;
+        incomingDamage -= extraHealthFromAbility > 0 ? extraHealthFromAbility : 0;
+        extraHealthFromAbility -= tempIncomingDamage;
+
         float dodgeRoll = Random.Range(0f, 100f);
         float dodgeChance = unitStats.GetStats().DodgeChance;
 
@@ -176,6 +190,16 @@ public class UnitCombatHandler : MonoBehaviour
 
     void Die()
     {
+        if(specialAbility.ToLower() == "flashwave")
+        {
+            int randomNum = Random.Range(1, 6);
+            int chances = Random.Range(1, 101);
+
+            if(randomNum <= chances)
+            {
+                //TODO frenzy
+            }
+        }
         Debug.Log($"{gameObject.name} has died.");
         if (TournamentManager.Instance.IsTournamentActive)
         {

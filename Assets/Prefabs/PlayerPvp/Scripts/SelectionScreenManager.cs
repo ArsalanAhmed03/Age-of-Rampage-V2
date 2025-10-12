@@ -351,7 +351,33 @@ public class SelectionScreenManager : MonoBehaviour
         }
         else
         {
-            //TODO UPDATE COUNT IN LOADOUT 
+            foreach (Transform child in unitSelectionGrid)
+            {
+                DraggableUnit drag = child.GetComponent<DraggableUnit>();
+                if (drag != null && drag.unitPrefab != null && drag.unitPrefab.name == name)
+                {
+                    TMP_Text countText = child.GetComponentInChildren<TMP_Text>();
+                    int index = UserDataManager.Instance.OwnedUnits.FindIndex(u => u == name);
+                    if (countText != null && index >= 0 && index < UserDataManager.Instance.OwnedUnitsCounts.Count)
+                    {
+                        countText.text = $"x{UserDataManager.Instance.OwnedUnitsCounts[index]}";
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    public void BuyFilm(int amount = 5)
+    {
+        if (PlayerStatsManager.Instance.SpendCoins(amount))
+        {
+            UserDataManager.Instance.Films = UserDataManager.Instance.Films + 1;
+            Debug.Log($"Bought {amount} films.");
+        }
+        else
+        {
+            Debug.LogWarning("Not enough coins to buy films.");
         }
     }
 

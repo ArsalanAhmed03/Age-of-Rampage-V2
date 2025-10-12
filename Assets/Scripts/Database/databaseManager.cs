@@ -20,6 +20,7 @@ using SFB; // StandaloneFileBrowser
 public class databaseManager : MonoBehaviour
 {
     [System.Serializable]
+
     public class User
     {
         public string Username;
@@ -28,6 +29,7 @@ public class databaseManager : MonoBehaviour
         public int Age;
         public int Gold;
         public int Level;
+        public int Films;
         public int Wins;
         public string ProfilePictureURL;
         public List<string> OwnedUnits;
@@ -35,11 +37,12 @@ public class databaseManager : MonoBehaviour
         public List<int> OwnedUnitsCS;
         public List<int> OwnedUnitsCounts;
         public List<string> LoadOut;
+        public List<string> OwnedUnitAbilities;
 
         public User() { }
 
-        public User(string username, string storedPassword, string email, int age, int gold, int level,
-            List<string> ownedUnits, List<int> ownedUnitsLevels, List<int> ownedUnitsCS, List<int> ownedUnitsCounts, string profilePictureURL, int wins = 0)
+        public User(string username, string storedPassword, string email, int age, int gold, int level, int films,
+            List<string> ownedUnits, List<int> ownedUnitsLevels, List<int> ownedUnitsCS, List<int> ownedUnitsCounts, List<string> ownedUnitAbilities, string profilePictureURL, int wins = 0)
         {
             Username = username;
             StoredPassword = storedPassword;
@@ -47,10 +50,12 @@ public class databaseManager : MonoBehaviour
             Age = age;
             Gold = gold;
             Level = level;
+            Films = films;
             OwnedUnits = ownedUnits ?? new List<string>();
             OwnedUnitsLevels = ownedUnitsLevels ?? new List<int>();
             OwnedUnitsCS = ownedUnitsCS ?? new List<int>();
             OwnedUnitsCounts = ownedUnitsCounts ?? new List<int>();
+            OwnedUnitAbilities = ownedUnitAbilities ?? new List<string>();
             LoadOut = ownedUnits ?? new List<string>();
             ProfilePictureURL = string.IsNullOrEmpty(profilePictureURL)
                 ? "https://res.cloudinary.com/dtl29wsay/image/upload/v1755016948/epvmfob9g36skxoiyevz.png"
@@ -64,7 +69,6 @@ public class databaseManager : MonoBehaviour
     {
         public string secure_url;
     }
-
     private DatabaseReference dbRef;
     private FirebaseAuth auth;
     private FirebaseUser user;
@@ -278,11 +282,25 @@ public class databaseManager : MonoBehaviour
 
     private async Task SaveUserDataToDatabase(string name, string password, string email, string age, string profilePictureURL)
     {
-        var newUser = new User(name, password, email, int.Parse(age), 100, 1,
+
+        var allAbilities = Enum.GetNames(typeof(AbilityTypes.Ability));
+        string randomAbility1 = allAbilities[UnityEngine.Random.Range(0, allAbilities.Length)];
+        string randomAbility2 = allAbilities[UnityEngine.Random.Range(0, allAbilities.Length)];
+        string randomAbility3 = allAbilities[UnityEngine.Random.Range(0, allAbilities.Length)];
+
+        var selectedAbilities = new List<string>
+        {
+            randomAbility1,
+            randomAbility2,
+            randomAbility3
+        };
+
+        var newUser = new User(name, password, email, int.Parse(age), 100, 1, 1,
             new List<string> { "CraneRon", "KenDuong", "Ronny-V" },
             new List<int> { 1, 1, 1 },
-            new List<int> { 0, 0, 0 },
             new List<int> { 1, 1, 1 },
+            new List<int> { 1, 1, 1 },
+            selectedAbilities,
             profilePictureURL);
 
         string json = JsonUtility.ToJson(newUser);
@@ -328,10 +346,12 @@ public class databaseManager : MonoBehaviour
     {
         UserDataManager.Instance.UserName = user.Username;
         UserDataManager.Instance.Gold = user.Gold;
+        UserDataManager.Instance.Films = user.Films;
         UserDataManager.Instance.Level = user.Level;
         UserDataManager.Instance.OwnedUnits = user.OwnedUnits ?? new List<string> { "CraneRon", "KenDuong", "Ronny-V" };
         UserDataManager.Instance.OwnedUnitsLevels = user.OwnedUnitsLevels ?? new List<int> { 1, 1, 1 };
-        UserDataManager.Instance.OwnedUnitsCS = user.OwnedUnitsCS ?? new List<int> { 0, 0, 0 };
+        UserDataManager.Instance.OwnedUnitAbilities = user.OwnedUnitAbilities ?? new List<string> { "Cleptomaniac", "PiggyBank", "StaminaExpert" };
+        UserDataManager.Instance.OwnedUnitsCS = user.OwnedUnitsCS ?? new List<int> { 1, 1, 1 };
         UserDataManager.Instance.OwnedUnitsCounts = user.OwnedUnitsCounts ?? new List<int> { 1, 1, 1 };
         UserDataManager.Instance.LoadOut = user.LoadOut ?? new List<string> { "CraneRon", "KenDuong", "Ronny-V" };
         UserDataManager.Instance.ProfilePictureURL = user.ProfilePictureURL ?? "";
@@ -344,12 +364,25 @@ public class databaseManager : MonoBehaviour
     {
         if (isProcessing) return;
         isProcessing = true; SetButtonsInteractable(false);
+        var allAbilities = Enum.GetNames(typeof(AbilityTypes.Ability));
+        string randomAbility1 = allAbilities[UnityEngine.Random.Range(0, allAbilities.Length)];
+        string randomAbility2 = allAbilities[UnityEngine.Random.Range(0, allAbilities.Length)];
+        string randomAbility3 = allAbilities[UnityEngine.Random.Range(0, allAbilities.Length)];
 
-        User guestUser = new User("GuestUser", "guest_password", "<guest_email>", 18, 500, 1,
+        var selectedAbilities = new List<string>
+        {
+            randomAbility1,
+            randomAbility2,
+            randomAbility3
+        };
+
+
+        User guestUser = new User("GuestUser", "guest_password", "<guest_email>", 18, 500, 1, 1,
             new List<string> { "CraneRon", "KenDuong", "Ronny-V" },
             new List<int> { 1, 1, 1 },
-            new List<int> { 0, 0, 0 },
             new List<int> { 1, 1, 1 },
+            new List<int> { 1, 1, 1 },
+            selectedAbilities,
             "https://res.cloudinary.com/dtl29wsay/image/upload/v1755016948/epvmfob9g36skxoiyevz.png");
 
         UpdateUIWithUser(guestUser);

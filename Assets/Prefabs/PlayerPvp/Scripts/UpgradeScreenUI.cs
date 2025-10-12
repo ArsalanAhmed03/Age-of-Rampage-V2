@@ -7,6 +7,9 @@ public class UpgradeScreenUI : MonoBehaviour
     public TMP_Text nameText;
     public TMP_Text levelText;
 
+    public TMP_Text currentCountText;
+    public TMP_Text currentCSText;
+
     public Image unitImage;
     public Button levelUpButton;
     public Button combineButton;
@@ -18,6 +21,11 @@ public class UpgradeScreenUI : MonoBehaviour
     public Transform spdRow;
     // public Transform critRow;
     public Transform critDmgRow;
+
+    [Header("Combine Row")]
+
+    public Transform hpRowCombine;       // 3 children: Label, Value, Next
+    public Transform atkRowCombine;
 
     private UnitStats currentUnit;
 
@@ -44,8 +52,8 @@ public class UpgradeScreenUI : MonoBehaviour
         StatGrowth growth = currentUnit.growth;
         UnitStatsData next = new UnitStatsData
         {
-            HP = currentUnit.baseHP + growth.HPPerLevel * levelOffset,
-            Attack = currentUnit.baseAttack + growth.AttackPerLevel * levelOffset,
+            HP = currentUnit.baseHP + (currentUnit.currentCS * 2) + growth.HPPerLevel * levelOffset,
+            Attack = currentUnit.baseAttack + (currentUnit.currentCS * 1) + growth.AttackPerLevel * levelOffset,
             Speed = currentUnit.baseSpeed + growth.SpeedPerLevel * levelOffset,
             CritChance = currentUnit.baseCritChance + growth.CritChancePerLevel * levelOffset,
             CritMultiplier = currentUnit.critMultiplier + growth.CritDamagePerLevel * levelOffset,
@@ -55,11 +63,18 @@ public class UpgradeScreenUI : MonoBehaviour
         nameText.text = currentUnit.name;
         levelText.text = $"Lvl: {currentUnit.currentLevel}/{currentUnit.maxLevel}";
 
+        currentCountText.text = $"x{UserDataManager.Instance.GetUnitCount(currentUnit.name)}";
+        currentCSText.text = $"CS: {currentUnit.currentCS} -> {currentUnit.currentCS + 1}";
+
+
         SetStatRow(hpRow, "HP", current.HP, next.HP - current.HP);
         SetStatRow(atkRow, "ATK", current.Attack, next.Attack - current.Attack);
         SetStatRow(spdRow, "Speed", current.Speed, next.Speed - current.Speed);
         // SetStatRow(critRow, "Critical", current.CritChance, next.CritChance - current.CritChance, isPercent: true);
         SetStatRow(critDmgRow, "Crit Dmg", current.CritMultiplier, next.CritMultiplier - current.CritMultiplier, isMultiplier: true);
+
+        SetStatRow(hpRowCombine, "HP", current.HP, 2);
+        SetStatRow(atkRowCombine, "ATK", current.Attack, 1);
     }
 
     void SetStatRow(Transform row, string label, float current, float increase, bool isPercent = false, bool isMultiplier = false)
@@ -82,6 +97,12 @@ public class UpgradeScreenUI : MonoBehaviour
         RefreshUI();
     }
 
+    public void OnCombineUnit()
+    {
+        currentUnit.Combine();
+        RefreshUI();
+    }
+
     public void OnBuyUnit()
     {
         SelectionScreenManager.Instance.BuyUnit(currentUnit.name);
@@ -96,12 +117,15 @@ public class UpgradeScreenUI : MonoBehaviour
     {
         if (isBuyScreen)
         {
-            levelUpButton.gameObject.SetActive(false);
+            levelUpButton?.gameObject.SetActive(false);
+            combineButton?.gameObject.SetActive(false);
         }
         else
         {
-            levelUpButton.onClick.AddListener(OnLevelUp);
+            levelUpButton?.onClick.AddListener(OnLevelUp);
+            combineButton?.onClick.AddListener(OnCombineUnit);
+
         }
-        closeButton.onClick.AddListener(Close);
+        closeButton?.onClick.AddListener(Close);
     }
 }

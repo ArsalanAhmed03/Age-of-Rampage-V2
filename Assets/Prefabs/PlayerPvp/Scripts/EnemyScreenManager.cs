@@ -184,8 +184,15 @@ public class EnemyScreenManager : MonoBehaviour
         if (FirebaseUpdater.Instance != null)
         {
             FirebaseUpdater.Instance.OnOpponentsDataReady += OnOpponentsDataReceived;
-
         }
+
+        // Subscribe to Firebase leader board data event
+
+        if (FirebaseUpdater.Instance != null)
+        {
+            FirebaseUpdater.Instance.OnLeaderBoardDataReady += OnLeaderBoardDataReceived;
+        }
+
         // Set up initial state
         ShowArenaStartScreen();
     }
@@ -262,8 +269,20 @@ public class EnemyScreenManager : MonoBehaviour
     {
         currentLeaderBoard = leaderBoardList;
         isLeaderBoardDataLoaded = true;
-        CacheLeaderBoardSlotComponents();
+        // CacheLeaderBoardSlotComponents();
         UpdateLeaderBoardSlots();
+    }
+
+    private void ClearExistingSlots()
+    {
+        if (LeaderBoardSlotParents == null) return;
+
+        // Destroy all children of the parent transform
+        int childCount = LeaderBoardSlotParents.childCount;
+        for (int i = childCount - 1; i >= 0; i--)
+        {
+            Destroy(LeaderBoardSlotParents.GetChild(i).gameObject);
+        }
     }
 
     private void CacheOpponentSlotComponents()
@@ -291,21 +310,19 @@ public class EnemyScreenManager : MonoBehaviour
     }
 
     // Cache leaderboard slot components: profile image, name, level, wins
-    private Button[] leaderBoardSlotButtons;
+    // private Button[] leaderBoardSlotButtons;
     private Image[] leaderBoardSlotImages;
     private TextMeshProUGUI[] leaderBoardSlotNameTexts;
-    private TextMeshProUGUI[] leaderBoardSlotLevelTexts;
     private TextMeshProUGUI[] leaderBoardSlotWinsTexts;
 
     private void CacheLeaderBoardSlotComponents()
     {
         if (LeaderBoardSlotParents == null) return;
 
-        int slotCount = Mathf.Min(LeaderBoardSlotParents.childCount, 10);
-        leaderBoardSlotButtons = new Button[slotCount];
+        int slotCount = LeaderBoardSlotParents.childCount;
+        // leaderBoardSlotButtons = new Button[slotCount];
         leaderBoardSlotImages = new Image[slotCount];
         leaderBoardSlotNameTexts = new TextMeshProUGUI[slotCount];
-        leaderBoardSlotLevelTexts = new TextMeshProUGUI[slotCount];
         leaderBoardSlotWinsTexts = new TextMeshProUGUI[slotCount];
 
         for (int i = 0; i < slotCount; i++)
@@ -320,22 +337,13 @@ public class EnemyScreenManager : MonoBehaviour
             if (texts.Length >= 3)
             {
                 leaderBoardSlotNameTexts[i] = texts[0];
-                leaderBoardSlotLevelTexts[i] = texts[1];
                 leaderBoardSlotWinsTexts[i] = texts[2];
             }
             else
             {
                 // Fallback: assign nulls
                 leaderBoardSlotNameTexts[i] = null;
-                leaderBoardSlotLevelTexts[i] = null;
                 leaderBoardSlotWinsTexts[i] = null;
-            }
-
-            // Get or add button component
-            leaderBoardSlotButtons[i] = slotTransform.GetComponent<Button>();
-            if (leaderBoardSlotButtons[i] == null)
-            {
-                leaderBoardSlotButtons[i] = slotTransform.gameObject.AddComponent<Button>();
             }
         }
     }
@@ -385,60 +393,84 @@ public class EnemyScreenManager : MonoBehaviour
         }
     }
 
+    public GameObject LeaderBoardSlotPrefab; 
+
     private void UpdateLeaderBoardSlots()
     {
-        if (LeaderBoardSlotParents == null || leaderBoardSlotButtons == null)
+        if (LeaderBoardSlotParents == null || LeaderBoardSlotPrefab == null || currentLeaderBoard == null)
         {
-            Debug.LogError("LeaderBoardSlotParents or cached components are null");
+            Debug.LogError("LeaderBoardSlotParents, LeaderBoardSlotPrefab, or currentLeaderBoard is null. Cannot update slots.");
             return;
         }
 
-        // Update slots with cached components for better performance
-        for (int i = 0; i < leaderBoardSlotButtons.Length; i++)
+        // 1. Clear previous slots
+        ClearExistingSlots();
+
+        // 2. Instantiate and set data for each entry in the leaderboard list
+        for (int i = 0; i < currentLeaderBoard.Count; i++)
         {
-            if (i < currentLeaderBoard.Count)
+            FirebaseUpdater.OpponentData leaderBoardEntry = currentLeaderBoard[i];
+
+            // A. Instantiate the new slot
+            GameObject newSlot = Instantiate(LeaderBoardSlotPrefab, LeaderBoardSlotParents);
+            Debug.Log($"<color=blue>Creating leaderboard slot for rank {i + 1}</color>");
+            Transform slotTransform = newSlot.transform;
+
+            // B. Find the components on the new slot (adjust names/indices based on your prefab)
+
+            // Assuming the Image is directly on the slot or a known child
+            Image profileImage = slotTransform.GetComponentInChildren<Image>();
+
+            // Assuming texts are children and ordered: [NameText], [LevelText], [WinsText]
+            TextMeshProUGUI[] texts = slotTransform.GetComponentsInChildren<TextMeshProUGUI>();
+
+            TextMeshProUGUI nameText = null;
+            TextMeshProUGUI winsText = null;
+
+            // Assuming NameText is index 0 and WinsText is index 2, as per your old logic
+            if (texts.Length >= 2)
             {
-                FirebaseUpdater.OpponentData leaderBoardEntry = currentLeaderBoard[i];
-
-                if (leaderBoardSlotImages[i] != null && !string.IsNullOrEmpty(leaderBoardEntry.profilePictureUrl))
-                {
-                    Debug.Log($"<color=purple>Loading profile picture for {leaderBoardEntry.username}</color>");
-                    StartCoroutine(LoadProfilePicture(leaderBoardEntry.profilePictureUrl, leaderBoardSlotImages[i]));
-                }
-
-                // Set username text
-                if (leaderBoardSlotNameTexts[i] != null)
-                {
-                    leaderBoardSlotNameTexts[i].text = leaderBoardEntry.username;
-                }
-
-                // Set level text
-                if (leaderBoardSlotLevelTexts[i] != null)
-                {
-                    leaderBoardSlotLevelTexts[i].text = "Level " + leaderBoardEntry.level.ToString();
-                }
-
-                // Set wins text
-                if (leaderBoardSlotWinsTexts[i] != null)
-                {
-                    leaderBoardSlotWinsTexts[i].text = leaderBoardEntry.wins.ToString();
-                }
-
-                // Enable the slot
-                leaderBoardSlotButtons[i].gameObject.SetActive(true);
-
-                // Set up click event (remove previous listeners for safety)
-                leaderBoardSlotButtons[i].onClick.RemoveAllListeners();
-                // int index = i; // Capture for closure
-                // leaderBoardSlotButtons[i].onClick.AddListener(() => ShowSelectedLeaderBoardEntry(index));
+                nameText = texts[0];
+                // Assuming texts[1] is LevelText which you don't need to display
+                winsText = texts[1];
             }
             else
             {
-                // Hide and clear empty slots
-                leaderBoardSlotButtons[i].gameObject.SetActive(false);
-                if (leaderBoardSlotNameTexts[i] != null) leaderBoardSlotNameTexts[i].text = "";
-                if (leaderBoardSlotLevelTexts[i] != null) leaderBoardSlotLevelTexts[i].text = "";
-                if (leaderBoardSlotWinsTexts[i] != null) leaderBoardSlotWinsTexts[i].text = "";
+                Debug.LogWarning($"Slot prefab for rank {i + 1} is missing required TextMeshProUGUI components (found {texts.Length}).");
+            }
+
+            // C. Set the data on the components
+
+            // 1. Load Profile Picture (if available)
+            if (profileImage != null)
+            {
+                if (!string.IsNullOrEmpty(leaderBoardEntry.profilePictureUrl))
+                {
+                    Debug.Log($"<color=purple>[LeaderBoard] Loading profile picture for {leaderBoardEntry.username}</color>");
+                    StartCoroutine(LoadProfilePicture(leaderBoardEntry.profilePictureUrl, profileImage));
+                }
+                else
+                {
+                    Debug.Log($"<color=red>[LeaderBoard] No profile picture URL for {leaderBoardEntry.username}</color>");
+                    profileImage.sprite = null;
+                    profileImage.color = new Color(1, 1, 1, 0.3f); // semi-transparent
+                }
+            }
+            else
+            {
+                Debug.Log($"<color=orange>[LeaderBoard] Profile image component missing for rank {i + 1} ({leaderBoardEntry.username})</color>");
+            }
+
+            // 2. Set username text
+            if (nameText != null)
+            {
+                nameText.text = leaderBoardEntry.username;
+            }
+
+            // 3. Set wins text
+            if (winsText != null)
+            {
+                winsText.text = $"Wins: {leaderBoardEntry.wins.ToString()}";
             }
         }
     }
@@ -760,6 +792,7 @@ public class EnemyScreenManager : MonoBehaviour
                     if (unitStats != null && i < selectedOpponent.loadoutLevels.Count)
                     {
                         unitStats.currentLevel = selectedOpponent.loadoutLevels[i];
+                        unitStats.currentCS = selectedOpponent.loadoutCS[i];
                     }
                 }
             }
@@ -784,6 +817,8 @@ public class EnemyScreenManager : MonoBehaviour
                     if (unitStats != null && i < selectedOpponent.loadoutLevels.Count)
                     {
                         unitStats.currentLevel = selectedOpponent.loadoutLevels[i];
+                        unitStats.currentCS = selectedOpponent.loadoutCS[i];
+
                     }
                 }
             }
@@ -855,6 +890,8 @@ public class EnemyScreenManager : MonoBehaviour
 
     public void OnLeaderBoardDataReceived(List<FirebaseUpdater.OpponentData> leaderBoardList)
     {
-        // SetLeaderBoardData(leaderBoardList);
+
+        Debug.Log($"<color=blue>OnLeaderBoardDataReceived called with {leaderBoardList.Count} entries</color>");
+        SetLeaderBoardData(leaderBoardList);
     }
 }

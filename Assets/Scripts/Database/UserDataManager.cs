@@ -9,12 +9,14 @@ public class UserDataManager : MonoBehaviour
 
     public int gold;
     public int level;
+
+    public int films;
     public int wins;
     public List<string> OwnedUnits = new List<string>();
     public List<int> OwnedUnitsLevels = new List<int>();
     public List<int> OwnedUnitsCS = new List<int>();
-
     public List<int> OwnedUnitsCounts = new List<int>();
+    public List<string> OwnedUnitAbilities = new List<string>();
     public List<string> LoadOut = new List<string>();
     public string ProfilePictureURL;
     public bool isLoggedIn = false;
@@ -60,6 +62,22 @@ public class UserDataManager : MonoBehaviour
         }
     }
 
+    public int Films
+    {
+        get => films;
+        set
+        {
+            films = value;
+            if (isLoggedIn)
+            {
+                Debug.Log($"Setting Films to {films}");
+                FirebaseUpdater.Instance.UpdateUserFilms(films);
+                PlayerStatsManager.Instance?.UpdateFilmsUI();
+
+            }
+        }
+    }
+
 
     void Awake()
     {
@@ -87,6 +105,16 @@ public class UserDataManager : MonoBehaviour
             return OwnedUnitsLevels[index];
         }
         return 0; // Unit not found or level not available
+    }
+
+    public int GetUnitCount(string unitName)
+    {
+        int index = GetUnitIndexByName(unitName);
+        if (index != -1 && index < OwnedUnitsCounts.Count)
+        {
+            return OwnedUnitsCounts[index];
+        }
+        return 0; // Unit not found or count not available
     }
 
 

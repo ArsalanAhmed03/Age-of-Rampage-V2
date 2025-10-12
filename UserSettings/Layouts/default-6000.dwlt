@@ -19,7 +19,7 @@ MonoBehaviour:
     width: 1706.6667
     height: 869.3334
   m_ShowMode: 4
-  m_Title: Inspector
+  m_Title: Project
   m_RootView: {fileID: 2}
   m_MinSize: {x: 875, y: 300}
   m_MaxSize: {x: 10000, y: 10000}
@@ -119,7 +119,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 100}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 1
-  controlID: 55
+  controlID: 45
   draggingID: 0
 --- !u!114 &6
 MonoBehaviour:
@@ -146,7 +146,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 50}
   m_MaxSize: {x: 24288, y: 8096}
   vertical: 0
-  controlID: 56
+  controlID: 46
   draggingID: 0
 --- !u!114 &7
 MonoBehaviour:
@@ -222,8 +222,8 @@ MonoBehaviour:
     y: 0
     width: 413.33325
     height: 477.33334
-  m_MinSize: {x: 275, y: 50}
-  m_MaxSize: {x: 4000, y: 4000}
+  m_MinSize: {x: 276, y: 76}
+  m_MaxSize: {x: 4001, y: 4026}
   m_ActualView: {fileID: 17}
   m_Panes:
   - {fileID: 17}
@@ -331,10 +331,10 @@ MonoBehaviour:
     m_OverlaysVisible: 1
   m_SceneHierarchy:
     m_TreeViewState:
-      scrollPos: {x: 0, y: 126}
-      m_SelectedIDs: 9c49ffff
-      m_LastClickedID: -46692
-      m_ExpandedIDs: 9c49ffff1e4fffff92c9ffffaedfffff50e0fffff6faffff9e410100ca6e0100866f0100ce720100067301004073010072730100
+      scrollPos: {x: 0, y: 0}
+      m_SelectedIDs: 
+      m_LastClickedID: 0
+      m_ExpandedIDs: 7a72feff8c72feff6c8bfeff948bfeff7a8cfeffc0aafeff52d0feff4aeafeffc410ffff101bffff1a1dffffc21effff1c1fffff641fffffc624ffff5029ffffa64dffffc872ffff907affffa27affffe090ffff0891ffff7cc4ffff22e4ffff72e4ffff44e6ffff6eecffffaef2ffffb4f3ffff2af8fffff6faffff72230100642401009a240100b624010050250100ba260100ea2601004a270100242801006828010052b6010092b9010034bb010066bb0100d8080200180c0200320c02007a0d0200ba0d0200ec0d0200200e02005c2102009c240200b6240200fe2502003e2602007026020086580200b8580200
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -383,7 +383,7 @@ MonoBehaviour:
     x: 305.33334
     y: 78.66667
     width: 986
-    height: 452
+    height: 451.33334
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0
@@ -952,9 +952,9 @@ MonoBehaviour:
   m_AudioPlay: 0
   m_DebugDrawModesUseInteractiveLightBakingData: 0
   m_Position:
-    m_Target: {x: 1229.1362, y: 530.962, z: -4.778079}
+    m_Target: {x: 1425.963, y: 367.71512, z: -1.5629776}
     speed: 2
-    m_Value: {x: 1229.1362, y: 530.962, z: -4.778079}
+    m_Value: {x: 1425.963, y: 367.71512, z: -1.5629776}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -1004,9 +1004,9 @@ MonoBehaviour:
     speed: 2
     m_Value: {x: 0, y: 0, z: 0, w: 1}
   m_Size:
-    m_Target: 545.16943
+    m_Target: 645.7653
     speed: 2
-    m_Value: 545.16943
+    m_Value: 645.7653
   m_Ortho:
     m_Target: 1
     speed: 2
@@ -1064,7 +1064,7 @@ MonoBehaviour:
     x: 305.33334
     y: 78.66667
     width: 986
-    height: 452
+    height: 451.33334
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0
@@ -1754,7 +1754,7 @@ MonoBehaviour:
   m_ShowGizmos: 0
   m_TargetDisplay: 0
   m_ClearColor: {r: 0, g: 0, b: 0, a: 1}
-  m_TargetSize: {x: 2340, y: 1080}
+  m_TargetSize: {x: 1792, y: 828}
   m_TextureFilterMode: 0
   m_TextureHideFlags: 61
   m_RenderIMGUI: 1
@@ -1778,11 +1778,11 @@ MonoBehaviour:
     - '{"m_SerializationStates":{"androidSystemFoldout":false}}'
     - '{}'
     - '{}'
-    scale: 35
+    scale: 25
     fitToScreenEnabled: 0
     rotationDegree: 270
     highlightSafeAreaEnabled: 0
-    friendlyName: Google Pixel 5
+    friendlyName: Apple iPhone 11
     screenIndex: 0
     networkReachability: 1
     systemLanguage: 10
@@ -1829,7 +1829,7 @@ MonoBehaviour:
     m_ControlHash: -371814159
     m_PrefName: Preview_InspectorPreview
   m_LastInspectedObjectInstanceID: -1
-  m_LastVerticalScrollValue: 368.55005
+  m_LastVerticalScrollValue: 0
   m_GlobalObjectId: 
   m_InspectorMode: 0
   m_LockTracker:
@@ -1873,7 +1873,7 @@ MonoBehaviour:
     m_OverlaysVisible: 1
   m_LockTracker:
     m_IsLocked: 0
-  m_LastSelectedObjectID: -46692
+  m_LastSelectedObjectID: 160952
 --- !u!114 &19
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -1929,18 +1929,18 @@ MonoBehaviour:
     m_ImportLogFlags: 0
     m_FilterByTypeIntersection: 0
   m_ViewMode: 1
-  m_StartGridSize: 68
+  m_StartGridSize: 61
   m_LastFolders:
   - Assets/Scenes
-  m_LastFoldersGridSize: 68
+  m_LastFoldersGridSize: 61
   m_LastProjectPath: D:\UnityLibrary\Age-of-Rampage-V2
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
-    scrollPos: {x: 0, y: 206.00003}
-    m_SelectedIDs: 5e390100
-    m_LastClickedID: 80222
-    m_ExpandedIDs: 00000000e03701005a3901007239010000ca9a3bffffff7f
+    scrollPos: {x: 0, y: 79}
+    m_SelectedIDs: a2210100
+    m_LastClickedID: 74146
+    m_ExpandedIDs: 000000002621010000ca9a3bffffff7f
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1969,7 +1969,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 
     m_LastClickedID: 0
-    m_ExpandedIDs: 00000000e0370100
+    m_ExpandedIDs: 0000000026210100
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1998,7 +1998,7 @@ MonoBehaviour:
     m_SelectedInstanceIDs: 
     m_LastClickedInstanceID: 0
     m_HadKeyboardFocusLastEvent: 1
-    m_ExpandedInstanceIDs: c6230000daf70000c0ff000000110100b8130100ea200100ec1a010060fd00006405010040060100300101004afe0000bc2c0100e8170100223d0100b29801007a280100688403009c280100680a010000000000f0570100
+    m_ExpandedInstanceIDs: c6230000daf70000c0ff000000110100b8130100ea200100ec1a010060fd00006405010040060100300101004afe0000bc2c0100e8170100223d0100b29801007a280100688403009c280100680a0100f0570100c22b010000000000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -2024,6 +2024,6 @@ MonoBehaviour:
       m_ResourceFile: 
     m_NewAssetIndexInList: -1
     m_ScrollPosition: {x: 0, y: 0}
-    m_GridSize: 68
+    m_GridSize: 61
   m_SkipHiddenPackages: 0
   m_DirectoriesAreaWidth: 137.66666

@@ -1,10 +1,12 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Firebase;
 using Firebase.Auth;
 using Firebase.Database;
 using Firebase.Extensions;
-using UnityEngine.AI;
+using TMPro;
+
 
 public class FirebaseUpdater : MonoBehaviour
 {
@@ -96,8 +98,6 @@ public class FirebaseUpdater : MonoBehaviour
             {
                 Debug.Log("User gold updated successfully!");
                 // Update local data to keep in sync
-                if (UserDataManager.Instance != null)
-                    UserDataManager.Instance.Gold = newGold;
             }
             else if (task.IsFaulted)
             {
@@ -120,9 +120,6 @@ public class FirebaseUpdater : MonoBehaviour
             if (task.IsCompletedSuccessfully)
             {
                 Debug.Log("User level updated successfully!");
-                // Update local data to keep in sync
-                if (UserDataManager.Instance != null)
-                    UserDataManager.Instance.Level = newLevel;
             }
             else if (task.IsFaulted)
             {
@@ -145,9 +142,6 @@ public class FirebaseUpdater : MonoBehaviour
             if (task.IsCompletedSuccessfully)
             {
                 Debug.Log("User wins updated successfully!");
-                // Update local data to keep in sync
-                if (UserDataManager.Instance != null)
-                    UserDataManager.Instance.Wins = newWins;
             }
             else if (task.IsFaulted)
             {
@@ -156,12 +150,35 @@ public class FirebaseUpdater : MonoBehaviour
         });
     }
 
-    public void UpdateOwnedUnits(List<string> ownedUnits, List<int> unitLevels, List<int> ownedUnitsCounts)
+
+    public void UpdateUserFilms(int newFilms)
+    {
+        if (!IsUserValid()) return;
+
+        Dictionary<string, object> updates = new Dictionary<string, object>
+        {
+            { "Films", newFilms }
+        };
+
+        dbRef.Child("users").Child(user.UserId).UpdateChildrenAsync(updates).ContinueWithOnMainThread(task =>
+        {
+            if (task.IsCompletedSuccessfully)
+            {
+                Debug.Log("User films updated successfully!");
+            }
+            else if (task.IsFaulted)
+            {
+                Debug.LogError("Failed to update films: " + task.Exception?.GetBaseException());
+            }
+        });
+    }
+
+    public void UpdateOwnedUnits(List<string> ownedUnits, List<int> unitLevels, List<int> ownedUnitsCounts, List<int> ownedUnitsCS, List<string> ownedUnitAbilities)
     {
         if (!IsUserValid()) return;
 
         // Validate input lists
-        if (ownedUnits == null || unitLevels == null || ownedUnitsCounts == null)
+        if (ownedUnits == null || unitLevels == null || ownedUnitsCounts == null || ownedUnitsCS == null || ownedUnitAbilities == null)
         {
             Debug.LogError("Owned units, unit levels, or unit counts list is null");
             return;
@@ -177,7 +194,9 @@ public class FirebaseUpdater : MonoBehaviour
         {
             { "OwnedUnits", ownedUnits },
             { "OwnedUnitsLevels", unitLevels },
-            { "OwnedUnitsCounts", ownedUnitsCounts }
+            { "OwnedUnitsCounts", ownedUnitsCounts },
+            { "OwnedUnitsCS", ownedUnitsCS },
+            { "OwnedUnitAbilities", ownedUnitAbilities }
         };
 
         dbRef.Child("users").Child(user.UserId).UpdateChildrenAsync(updates).ContinueWithOnMainThread(task =>
@@ -222,7 +241,7 @@ public class FirebaseUpdater : MonoBehaviour
         {
             Debug.LogWarning($"Unit {unitName} already owned");
             UserDataManager.Instance.OwnedUnitsCounts[UserDataManager.Instance.GetUnitIndexByName(unitName)]++;
-            UpdateOwnedUnits(UserDataManager.Instance.OwnedUnits, UserDataManager.Instance.OwnedUnitsLevels, UserDataManager.Instance.OwnedUnitsCounts);
+            UpdateOwnedUnits(UserDataManager.Instance.OwnedUnits, UserDataManager.Instance.OwnedUnitsLevels, UserDataManager.Instance.OwnedUnitsCounts, UserDataManager.Instance.OwnedUnitsCS, UserDataManager.Instance.OwnedUnitAbilities);
             return;
         }
 
@@ -230,9 +249,18 @@ public class FirebaseUpdater : MonoBehaviour
         UserDataManager.Instance.OwnedUnits.Add(unitName);
         UserDataManager.Instance.OwnedUnitsLevels.Add(level);
         UserDataManager.Instance.OwnedUnitsCounts.Add(1);
+        UserDataManager.Instance.OwnedUnitsCS.Add(0); // Default CS value
+        string randomAbility = "";
+
+        var allAbilities = Enum.GetNames(typeof(AbilityTypes.Ability));
+        randomAbility = allAbilities[UnityEngine.Random.Range(0, allAbilities.Length)];
+
+        UserDataManager.Instance.OwnedUnitAbilities.Add(randomAbility);
+
+
 
         // Push to database
-        UpdateOwnedUnits(UserDataManager.Instance.OwnedUnits, UserDataManager.Instance.OwnedUnitsLevels, UserDataManager.Instance.OwnedUnitsCounts);
+        UpdateOwnedUnits(UserDataManager.Instance.OwnedUnits, UserDataManager.Instance.OwnedUnitsLevels, UserDataManager.Instance.OwnedUnitsCounts, UserDataManager.Instance.OwnedUnitsCS, UserDataManager.Instance.OwnedUnitAbilities);
     }
 
     public void UpdateUnitLevel(string unitName, int newLevel)
@@ -262,67 +290,54 @@ public class FirebaseUpdater : MonoBehaviour
         }
 
         UserDataManager.Instance.OwnedUnitsLevels[index] = newLevel;
-        UpdateOwnedUnits(UserDataManager.Instance.OwnedUnits, UserDataManager.Instance.OwnedUnitsLevels, UserDataManager.Instance.OwnedUnitsCounts);
+        UpdateOwnedUnits(UserDataManager.Instance.OwnedUnits, UserDataManager.Instance.OwnedUnitsLevels, UserDataManager.Instance.OwnedUnitsCounts, UserDataManager.Instance.OwnedUnitsCS, UserDataManager.Instance.OwnedUnitAbilities);
     }
 
-    public void UpdateUnitCS(string unitName, int newCS)
+    public bool IncrementUnitCS(string unitName)
     {
-        if (!IsUserValid()) return;
+        if (!IsUserValid()) return false;
 
         int index = UserDataManager.Instance.GetUnitIndexByName(unitName);
 
-        // Validate input
-        if (newCS < 1)
+        if (UserDataManager.Instance.OwnedUnitsCounts[index] < 2)
         {
-            Debug.LogError("Unit CS must be at least 1");
-            return;
+            Debug.LogError("Unit count must be at least 2");
+            return false;
         }
 
         // Check if UserDataManager exists
         if (UserDataManager.Instance == null)
         {
             Debug.LogError("UserDataManager.Instance is null");
-            return;
+            return false;
         }
 
         if (index < 0 || index >= UserDataManager.Instance.OwnedUnitsCounts.Count)
         {
             Debug.LogError($"Invalid unit index: {index}. Valid range: 0-{UserDataManager.Instance.OwnedUnitsCounts.Count - 1}");
-            return;
+            return false;
         }
 
-        UserDataManager.Instance.OwnedUnitsCounts[index] = newCS;
-        UpdateOwnedUnits(UserDataManager.Instance.OwnedUnits, UserDataManager.Instance.OwnedUnitsLevels, UserDataManager.Instance.OwnedUnitsCounts);
-    }
+        UserDataManager.Instance.OwnedUnitsCounts[index] = UserDataManager.Instance.OwnedUnitsCounts[index] - 1;
+        UserDataManager.Instance.OwnedUnitsCS[index] = UserDataManager.Instance.OwnedUnitsCS[index] + 1;
+        UpdateOwnedUnits(UserDataManager.Instance.OwnedUnits, UserDataManager.Instance.OwnedUnitsLevels, UserDataManager.Instance.OwnedUnitsCounts, UserDataManager.Instance.OwnedUnitsCS, UserDataManager.Instance.OwnedUnitAbilities);
 
-    public void UpdateUnitCount(string unitName, int newCount)
-    {
-        if (!IsUserValid()) return;
-
-        int index = UserDataManager.Instance.GetUnitIndexByName(unitName);
-
-        // Validate input
-        if (newCount < 1)
+        foreach (Transform child in SelectionScreenManager.Instance.unitSelectionGrid)
         {
-            Debug.LogError("Unit count must be at least 1");
-            return;
+            DraggableUnit drag = child.GetComponent<DraggableUnit>();
+            if (drag != null && drag.unitPrefab != null && drag.unitPrefab.name == unitName)
+            {
+                TMP_Text countText = child.GetComponentInChildren<TMP_Text>();
+                int index1 = UserDataManager.Instance.OwnedUnits.FindIndex(u => u == unitName);
+                if (countText != null && index1 >= 0 && index1 < UserDataManager.Instance.OwnedUnitsCounts.Count)
+                {
+                    countText.text = $"x{UserDataManager.Instance.OwnedUnitsCounts[index]}";
+                }
+                break;
+            }
         }
 
-        // Check if UserDataManager exists
-        if (UserDataManager.Instance == null)
-        {
-            Debug.LogError("UserDataManager.Instance is null");
-            return;
-        }
-
-        if (index < 0 || index >= UserDataManager.Instance.OwnedUnitsCounts.Count)
-        {
-            Debug.LogError($"Invalid unit index: {index}. Valid range: 0-{UserDataManager.Instance.OwnedUnitsCounts.Count - 1}");
-            return;
-        }
-
-        UserDataManager.Instance.OwnedUnitsCounts[index] = newCount;
-        UpdateOwnedUnits(UserDataManager.Instance.OwnedUnits, UserDataManager.Instance.OwnedUnitsLevels, UserDataManager.Instance.OwnedUnitsCounts);
+        return true;
     }
 
     // Helper method to check if user is valid
@@ -358,7 +373,7 @@ public class FirebaseUpdater : MonoBehaviour
         UserDataManager.Instance.OwnedUnitsLevels.RemoveAt(index);
         UserDataManager.Instance.OwnedUnitsCounts.RemoveAt(index);
 
-        UpdateOwnedUnits(UserDataManager.Instance.OwnedUnits, UserDataManager.Instance.OwnedUnitsLevels, UserDataManager.Instance.OwnedUnitsCounts);
+        UpdateOwnedUnits(UserDataManager.Instance.OwnedUnits, UserDataManager.Instance.OwnedUnitsLevels, UserDataManager.Instance.OwnedUnitsCounts, UserDataManager.Instance.OwnedUnitsCS, UserDataManager.Instance.OwnedUnitAbilities);
     }
 
     public void UpdateLoadout(List<string> loadout)
@@ -399,22 +414,26 @@ public class FirebaseUpdater : MonoBehaviour
         public int gold;
         public List<string> loadout;
         public List<int> loadoutLevels;
+
+        public List<int> loadoutCS = new List<int>();
         public string profilePictureUrl;
 
         public int wins;
 
-        public OpponentData(string userId, string username, int level, List<string> loadout, List<int> loadoutLevels, string profilePictureUrl, int wins, int gold)
+        public OpponentData(string userId, string username, int level, List<string> loadout, List<int> loadoutLevels, List<int> loadoutCS, string profilePictureUrl, int wins, int gold)
         {
             this.userId = userId;
             this.username = username;
             this.level = level;
             this.loadout = loadout ?? new List<string>();
             this.loadoutLevels = loadoutLevels ?? new List<int>();
+            this.loadoutCS = loadoutCS ?? new List<int>();
             this.profilePictureUrl = profilePictureUrl;
             this.wins = wins;
             this.gold = gold;
         }
     }
+
 
     public List<OpponentData> opponents = new List<OpponentData>();
 
@@ -433,6 +452,10 @@ public class FirebaseUpdater : MonoBehaviour
 
     bool poolingStarted = false;
 
+    // NOTE: You'll need to replace 'dbRef', 'user', and 'UserDataManager.Instance' 
+    // with your actual Firebase/User variables and logic, as they are not
+    // provided in the snippet.
+
     public void GetAllOpponents()
     {
         // if (!IsUserValid()) return;
@@ -442,21 +465,24 @@ public class FirebaseUpdater : MonoBehaviour
         poolingStarted = true;
 
         opponents.Clear();
-        leaderBoardList.Clear();
+        leaderBoardList.Clear(); // Clear the leader board list too
 
-        Debug.Log("<color=red>Fetching all opponents from Firebase...</color>");
+        Debug.Log("<color=red>Fetching all users from Firebase for opponents and leaderboard...</color>");
 
+        // The logic for fetching the data remains the same as it fetches ALL users
         dbRef.Child("users").GetValueAsync().ContinueWithOnMainThread(task =>
         {
             if (task.IsFaulted)
             {
                 Debug.LogError("Failed to fetch users: " + task.Exception?.GetBaseException());
+                poolingStarted = false; // Important: reset pooling flag on failure
                 return;
             }
 
             if (task.IsCanceled)
             {
                 Debug.LogError("Fetch users task was canceled");
+                poolingStarted = false; // Important: reset pooling flag on cancellation
                 return;
             }
 
@@ -464,6 +490,7 @@ public class FirebaseUpdater : MonoBehaviour
             if (!snapshot.Exists)
             {
                 Debug.LogWarning("No users found in database");
+                poolingStarted = false; // Important: reset pooling flag on no data
                 return;
             }
 
@@ -473,17 +500,45 @@ public class FirebaseUpdater : MonoBehaviour
 
                 string userId = userSnapshot.Key;
 
-                // Skip the current logged-in user
+                // Read username and wins first, as they are needed for both lists
+                string username = userSnapshot.Child("Username").Value?.ToString() ?? "Unknown";
+                int wins = 0; // Default wins to 0 for safety
+                if (userSnapshot.Child("Wins").Value != null && int.TryParse(userSnapshot.Child("Wins").Value.ToString(), out int parsedWins))
+                {
+                    wins = parsedWins;
+                }
+
+                string profilePictureUrl = userSnapshot.Child("ProfilePictureURL").Value?.ToString() ?? "";
+
+
+                // --- Leaderboard Data Collection ---
+                // For the leaderboard, we only need userId, username, and wins. 
+                // We pass null/default values for the rest.
+                OpponentData leaderboardEntry = new OpponentData(
+                    userId: userId,
+                    username: username,
+                    level: 0, // Not needed for leaderboard, setting to 0
+                    loadout: null, // Not needed, setting to null
+                    loadoutLevels: null, // Not needed, setting to null
+                    loadoutCS: null, // Not needed, setting to null
+                    profilePictureUrl: profilePictureUrl, // Not needed, setting to null
+                    wins: wins,
+                    gold: 0 // Not needed, setting to 0
+                );
+                leaderBoardList.Add(leaderboardEntry);
+
+
+                // --- Opponent Data Collection ---
+                // Skip the current logged-in user for the 'opponents' list
                 if (UserDataManager.Instance.isLoggedIn && userId == user.UserId)
                     continue;
 
                 try
                 {
-                    // Get user data
-                    string username = userSnapshot.Child("Username").Value?.ToString() ?? "Unknown";
+                    // Continue parsing all the other opponent-specific data (level, gold, loadout, etc.)
+                    // This section remains largely the same as your original code.
 
                     int level = 1;
-                    int wins = 1;
                     int gold = 0;
 
                     if (userSnapshot.Child("Level").Value != null)
@@ -491,14 +546,6 @@ public class FirebaseUpdater : MonoBehaviour
                         if (int.TryParse(userSnapshot.Child("Level").Value.ToString(), out int parsedLevel))
                         {
                             level = parsedLevel;
-                        }
-                    }
-
-                    if (userSnapshot.Child("Wins").Value != null)
-                    {
-                        if (int.TryParse(userSnapshot.Child("Wins").Value.ToString(), out int parsedWins))
-                        {
-                            wins = parsedWins;
                         }
                     }
 
@@ -524,6 +571,8 @@ public class FirebaseUpdater : MonoBehaviour
 
                     // Get loadout levels by matching with owned units
                     List<int> loadoutLevels = new List<int>();
+                    List<int> loadoutCS = new List<int>();
+                    List<int> loadoutCounts = new List<int>();
                     List<string> ownedUnits = new List<string>();
                     List<int> ownedUnitsLevels = new List<int>();
                     List<int> ownedUnitsCounts = new List<int>();
@@ -557,6 +606,7 @@ public class FirebaseUpdater : MonoBehaviour
                     }
 
                     DataSnapshot ownedUnitsCountsSnapshot = userSnapshot.Child("OwnedUnitsCounts");
+                    DataSnapshot ownedUnitsCSnapshot = userSnapshot.Child("OwnedUnitsCS");
                     if (ownedUnitsCountsSnapshot.Exists)
                     {
                         foreach (DataSnapshot countItem in ownedUnitsCountsSnapshot.Children)
@@ -564,6 +614,21 @@ public class FirebaseUpdater : MonoBehaviour
                             if (int.TryParse(countItem.Value?.ToString(), out int unitCount))
                             {
                                 ownedUnitsCounts.Add(unitCount);
+                            }
+                            else
+                            {
+                                ownedUnitsCounts.Add(0);
+                            }
+                        }
+                    }
+
+                    if (ownedUnitsCSnapshot.Exists)
+                    {
+                        foreach (DataSnapshot csItem in ownedUnitsCSnapshot.Children)
+                        {
+                            if (int.TryParse(csItem.Value?.ToString(), out int unitCS))
+                            {
+                                ownedUnitsCounts.Add(unitCS);
                             }
                             else
                             {
@@ -581,50 +646,48 @@ public class FirebaseUpdater : MonoBehaviour
                         if (unitIndex >= 0 && unitIndex < ownedUnitsLevels.Count)
                         {
                             loadoutLevels.Add(ownedUnitsLevels[unitIndex]);
+                            loadoutCS.Add(ownedUnitsCounts[unitIndex]);
+                            loadoutCounts.Add(ownedUnitsCounts[unitIndex]);
                         }
                         else
                         {
                             loadoutLevels.Add(1); // Default level if unit not found
+                            loadoutCS.Add(0); // Default CS if unit not found
+                            loadoutCounts.Add(1); // Default count if unit not found
                         }
                     }
 
-                    // Get profile picture URL
-                    string profilePictureUrl = userSnapshot.Child("ProfilePictureURL").Value?.ToString() ?? "";
+                    OpponentData opponent = new OpponentData(userId, username, level, loadout, loadoutLevels, loadoutCS, profilePictureUrl, wins, gold);
 
-                    OpponentData opponent = new OpponentData(userId, username, level, loadout, loadoutLevels, profilePictureUrl, wins, gold);
-
-                    opponents.Add(opponent);
-
-                    // leaderBoardList.Add(opponent);
+                    opponents.Add(opponent); // Add to opponents list
 
                     Debug.Log($"Found opponent: {username} (Level {level}) - Loadout: {string.Join(", ", loadout)} - Levels: {string.Join(", ", loadoutLevels)} - Gold: {gold}");
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogError($"Error parsing user data for {userId}: {e.Message}");
+                    Debug.LogError($"Error parsing opponent data for {userId}: {e.Message}");
                 }
             }
 
             poolingStarted = false;
-            OnOpponentsDataReady?.Invoke(opponents);
 
-            // Debug.Log($"Total opponents found: {leaderBoardList.Count}");
+            // --- Post-Processing and Invocation ---
 
             // Notify listeners that opponents data is ready
-            // OnOpponentsDataReady?.Invoke(opponents);
+            OnOpponentsDataReady?.Invoke(opponents);
 
-            // leaderBoardList.Sort((a, b) => b.level.CompareTo(a.level));
+            // Sort the leaderboard list by wins (descending)
+            leaderBoardList.Sort((a, b) => b.wins.CompareTo(a.wins));
 
+            // Optional: Limit the leaderboard size (e.g., to top 10)
             // if (leaderBoardList.Count > 10)
             // {
             //     leaderBoardList = leaderBoardList.GetRange(0, 10);
             // }
 
+            // Notify listeners that leaderboard data is ready
+            OnLeaderBoardDataReady?.Invoke(leaderBoardList);
 
-            // OnLeaderBoardDataReady?.Invoke(leaderBoardList);
-
-            // Data is now available in the 'opponents' list
-            // You can process this data as needed
         });
     }
 

@@ -1,6 +1,8 @@
 using System.Collections.Generic;
-using Unity.Services.Lobbies.Models;
 using UnityEngine;
+using System.Collections;
+using TMPro;
+using UnityEngine.UI;
 
 public class BattleSystem : MonoBehaviour
 {
@@ -23,20 +25,27 @@ public class BattleSystem : MonoBehaviour
 
     public GameObject PauseMenu;
 
+    public GameObject FilmButton;
+
     public bool TournamentMode = false;
 
     public UnityEngine.UI.Button fastForwardButton;
 
+
+
+    public GameObject messageStart;
+    public GameObject messageEnd;
+    public GameObject messagePrefab;
 
     private Transform[] playerFrontSpawns;
     private Transform[] playerBackSpawns;
     private Transform[] enemyFrontSpawns;
     private Transform[] enemyBackSpawns;
 
-    private List<UnitCombatHandler> playerFrontline = new List<UnitCombatHandler>();
-    private List<UnitCombatHandler> playerBackline = new List<UnitCombatHandler>();
-    private List<UnitCombatHandler> enemyFrontline = new List<UnitCombatHandler>();
-    private List<UnitCombatHandler> enemyBackline = new List<UnitCombatHandler>();
+    public List<UnitCombatHandler> playerFrontline = new List<UnitCombatHandler>();
+    public List<UnitCombatHandler> playerBackline = new List<UnitCombatHandler>();
+    public List<UnitCombatHandler> enemyFrontline = new List<UnitCombatHandler>();
+    public List<UnitCombatHandler> enemyBackline = new List<UnitCombatHandler>();
 
     public List<GameObject> enemyFrontPrefabs;
     public List<GameObject> enemyBackPrefabs;
@@ -51,7 +60,11 @@ public class BattleSystem : MonoBehaviour
     public float playerHealthCurrent = 0f;
     public float enemyHealthCurrent = 0f;
 
-    public bool fightEnded = false;
+    public Transform worldCanvas; // Canvas where animation will play (world-space or overlay)
+    public RectTransform filmButtonUI; // Assign the Film button's RectTransform in inspector
+    public GameObject filmSpritePrefab; // Assign a small film sprite prefab (UI Image or world sprite)
+
+    public bool fightEnded = true;
     private int currentTurnIndex = 0;
     private List<UnitCombatHandler> turnQueue = new List<UnitCombatHandler>();
 
@@ -98,9 +111,37 @@ public class BattleSystem : MonoBehaviour
 
             GameObject go = Instantiate(unitPrefab, playerFrontSpawns[i].position, Quaternion.identity);
             UnitCombatHandler handler = go.GetComponent<UnitCombatHandler>();
-            playerHealthTotal += handler.unitStats.GetStats().HP;
-            handler.IsFrontline = true;
-            playerFrontline.Add(handler);
+            int index = UserDataManager.Instance.OwnedUnits.IndexOf(unitPrefab.name);
+
+            if (!TournamentMode)
+            {
+                if (index >= 0 && index < UserDataManager.Instance.OwnedUnitAbilities.Count)
+                    handler.specialAbility = UserDataManager.Instance.OwnedUnitAbilities[index];
+                else
+                {
+                    handler.specialAbility = "Cleptomaniac";
+                }
+
+                int randomValue = Random.Range(1, 6);
+                if (handler.specialAbility.ToLower() == "staminaexpert")
+                {
+                    handler.extraHealthFromAbility = (int)(handler.unitStats.GetStats().HP * (randomValue * 5 / 100f));
+                }
+                playerHealthTotal += handler.unitStats.GetStats().HP + handler.extraHealthFromAbility;
+                handler.IsFrontline = true;
+
+                playerFrontline.Add(handler);
+
+                handler.specialAbility = "None";
+            }
+            else
+            {
+                handler.specialAbility = "None";
+                playerHealthTotal += handler.unitStats.GetStats().HP;
+                handler.IsFrontline = true;
+
+                playerFrontline.Add(handler);
+            }
         }
 
         // Spawn Player Backline
@@ -111,9 +152,37 @@ public class BattleSystem : MonoBehaviour
 
             GameObject go = Instantiate(unitPrefab, playerBackSpawns[i - 3].position, Quaternion.identity);
             UnitCombatHandler handler = go.GetComponent<UnitCombatHandler>();
-            playerHealthTotal += handler.unitStats.GetStats().HP;
-            handler.IsFrontline = false;
-            playerBackline.Add(handler);
+
+            int index = UserDataManager.Instance.OwnedUnits.IndexOf(unitPrefab.name);
+            if (!TournamentMode)
+            {
+                if (index >= 0 && index < UserDataManager.Instance.OwnedUnitAbilities.Count)
+                    handler.specialAbility = UserDataManager.Instance.OwnedUnitAbilities[index];
+                else
+                {
+                    handler.specialAbility = "Cleptomaniac";
+                }
+
+                int randomValue = Random.Range(1, 6);
+                if (handler.specialAbility.ToLower() == "staminaexpert")
+                {
+                    handler.extraHealthFromAbility = (int)(handler.unitStats.GetStats().HP * (randomValue * 5 / 100f));
+                }
+                playerHealthTotal += handler.unitStats.GetStats().HP + handler.extraHealthFromAbility;
+                handler.IsFrontline = false;
+
+                playerBackline.Add(handler);
+
+                handler.specialAbility = "None";
+            }
+            else
+            {
+                handler.specialAbility = "None";
+                playerHealthTotal += handler.unitStats.GetStats().HP;
+                handler.IsFrontline = false;
+
+                playerBackline.Add(handler);
+            }
         }
 
         if (TournamentMode)
@@ -126,6 +195,7 @@ public class BattleSystem : MonoBehaviour
                 enemyHealthTotal += handler.unitStats.GetStats().HP;
                 handler.IsFrontline = true;
                 enemyFrontline.Add(handler);
+                handler.specialAbility = "None";
 
             }
         }
@@ -142,6 +212,36 @@ public class BattleSystem : MonoBehaviour
                 enemyHealthTotal += handler.unitStats.GetStats().HP;
                 handler.IsFrontline = true;
                 enemyFrontline.Add(handler);
+                FilmCaptureTarget capture = go.GetComponent<FilmCaptureTarget>();
+                Collider2D col = go.GetComponent<Collider2D>();
+                if (col == null)
+                    col = go.AddComponent<BoxCollider2D>();
+
+                if (capture == null)
+                {
+                    capture = go.AddComponent<FilmCaptureTarget>();
+                    Debug.Log("Added FilmCaptureTarget component to enemy unit.");
+                }
+
+
+                if (capture != null)
+                {
+                    capture.unitHandler = handler;
+                    capture.filmButtonUI = filmButtonUI;
+                    capture.filmSpritePrefab = filmSpritePrefab;
+                    capture.worldCanvas = worldCanvas;
+                }
+
+
+                // int index = UserDataManager.Instance.OwnedUnits.IndexOf(unitPrefab.name);
+                // if (index >= 0 && index < UserDataManager.Instance.OwnedUnitAbilities.Count)
+                //     handler.specialAbility = UserDataManager.Instance.OwnedUnitAbilities[index];
+                // else
+                // {
+                //     handler.specialAbility = "Cleptomaniac";
+                // }
+                handler.specialAbility = "None";
+
             }
 
             // Spawn Enemy Backline
@@ -154,6 +254,33 @@ public class BattleSystem : MonoBehaviour
                 enemyHealthTotal += handler.unitStats.GetStats().HP;
                 handler.IsFrontline = false;
                 enemyBackline.Add(handler);
+
+                FilmCaptureTarget capture = go.GetComponent<FilmCaptureTarget>();
+                Collider2D col = go.GetComponent<Collider2D>();
+                if (col == null)
+                    col = go.AddComponent<BoxCollider2D>();
+
+                if (capture == null)
+                {
+                    capture = go.AddComponent<FilmCaptureTarget>();
+                    Debug.Log("Added FilmCaptureTarget component to enemy unit.");
+                }
+
+                if (capture != null)
+                {
+                    capture.unitHandler = handler;
+                    capture.filmButtonUI = filmButtonUI;
+                    capture.filmSpritePrefab = filmSpritePrefab;
+                    capture.worldCanvas = worldCanvas;
+                }
+                // int index = UserDataManager.Instance.OwnedUnits.IndexOf(unitPrefab.name);
+                // if (index >= 0 && index < UserDataManager.Instance.OwnedUnitAbilities.Count)
+                //     handler.specialAbility = UserDataManager.Instance.OwnedUnitAbilities[index];
+                // else
+                // {
+                //     handler.specialAbility = "Cleptomaniac";
+                // }
+                handler.specialAbility = "None";
             }
         }
 
@@ -271,6 +398,28 @@ public class BattleSystem : MonoBehaviour
 
     bool lastAttackerPlayer = true;
 
+    private void Update()
+    {
+        if (fightEnded || TournamentMode) return;
+
+        if (UserDataManager.Instance == null)
+        {
+            Debug.LogWarning("UserDataManager instance is null.");
+            return;
+        }
+
+        if (UserDataManager.Instance.Films < 1)
+        {
+            FilmButton.SetActive(false);
+        }
+        else
+        {
+            FilmButton.SetActive(true);
+        }
+
+
+    }
+
     public void UpdateHealthBars(int damage)
     {
         if (lastAttackerPlayer)
@@ -305,6 +454,42 @@ public class BattleSystem : MonoBehaviour
         enemyFrontline.Remove(unit);
         enemyBackline.Remove(unit);
 
+
+        if (unit.specialAbility.ToLower() == "flashwave" && unit.unitStats.GetStats().HP <= 0)
+        {
+            int randomValue = Random.Range(1, 6);
+            int chance = Random.Range(1, 101);
+            if (randomValue <= chance)
+            {
+                ShowFloatingText($"Flash Wave Active!", messageStart.transform);
+
+                foreach (var unitCheck in playerFrontline)
+                {
+                    string capturedUnitName = unitCheck.name.Replace("(Clone)", "").Trim();
+                    FirebaseUpdater.Instance.AddUnit(capturedUnitName);
+                    ShowFloatingText($"Captured {capturedUnitName}!", messageStart.transform);
+                }
+                foreach (var unitCheck in playerBackline)
+                {
+                    string capturedUnitName = unitCheck.name.Replace("(Clone)", "").Trim();
+                    FirebaseUpdater.Instance.AddUnit(capturedUnitName);
+                    ShowFloatingText($"Captured {capturedUnitName}!", messageStart.transform);
+                }
+                foreach (var unitCheck in enemyFrontline)
+                {
+                    string capturedUnitName = unitCheck.name.Replace("(Clone)", "").Trim();
+                    FirebaseUpdater.Instance.AddUnit(capturedUnitName);
+                    ShowFloatingText($"Captured {capturedUnitName}!", messageStart.transform);
+                }
+                foreach (var unitCheck in enemyBackline)
+                {
+                    string capturedUnitName = unitCheck.name.Replace("(Clone)", "").Trim();
+                    FirebaseUpdater.Instance.AddUnit(capturedUnitName);
+                    ShowFloatingText($"Captured {capturedUnitName}!", messageStart.transform);
+                }
+            }
+        }
+
         if (playerFrontline.Count + playerBackline.Count == 0)
         {
             Debug.Log("Enemy team wins!");
@@ -325,6 +510,51 @@ public class BattleSystem : MonoBehaviour
         }
         if (enemyFrontline.Count + enemyBackline.Count == 0)
         {
+            foreach (var unitCheck in playerFrontline)
+            {
+                if (unitCheck != null && unitCheck.specialAbility.ToLower() == "cleptomaniac" && unitCheck.unitStats.GetStats().HP > 0)
+                {
+                    int randomNum = Random.Range(1, 6);
+                    int chances = Random.Range(1, 101);
+                    if (randomNum <= chances)
+                    {
+                        UserDataManager.Instance.Films += 1;
+                    }
+                }
+                if (unitCheck != null && unitCheck.specialAbility.ToLower() == "piggybank" && unitCheck.unitStats.GetStats().HP > 0)
+                {
+                    int randomNum = 10;
+                    int goldCount = Random.Range(1, 6);
+                    int chances = Random.Range(1, 101);
+                    if (randomNum <= chances)
+                    {
+                        UserDataManager.Instance.Gold += goldCount;
+                    }
+                }
+            }
+            foreach (var unitCheck in playerBackline)
+            {
+                if (unitCheck != null && unitCheck.specialAbility.ToLower() == "cleptomaniac" && unitCheck.unitStats.GetStats().HP > 0)
+                {
+                    int randomNum = Random.Range(1, 6);
+                    int chances = Random.Range(1, 101);
+                    if (randomNum <= chances)
+                    {
+                        UserDataManager.Instance.Films += 1;
+                    }
+                }
+                if (unitCheck != null && unitCheck.specialAbility.ToLower() == "piggybank" && unitCheck.unitStats.GetStats().HP > 0)
+                {
+                    int randomNum = 10;
+                    int goldCount = Random.Range(1, 6);
+                    int chances = Random.Range(1, 101);
+                    if (randomNum <= chances)
+                    {
+                        UserDataManager.Instance.Gold += goldCount;
+                    }
+                }
+            }
+
             Debug.Log("Player team wins!");
             if (!TournamentMode)
             {
@@ -347,8 +577,8 @@ public class BattleSystem : MonoBehaviour
 
     // Method to update the enemy's level based on battle outcome
     private void UpdateEnemyStats(int levelChange, int winChange, int goldChange)
-        {
-            Debug.Log($"UpdateEnemyStats called with levelChange: {levelChange}, winChange: {winChange}, gold: {goldChange}");
+    {
+        Debug.Log($"UpdateEnemyStats called with levelChange: {levelChange}, winChange: {winChange}, gold: {goldChange}");
 
         // Find the EnemyScreenManager in the scene
         EnemyScreenManager enemyManager = FindFirstObjectByType<EnemyScreenManager>();
@@ -494,6 +724,68 @@ public class BattleSystem : MonoBehaviour
         }
         SelectionScreenManager.Instance.OnBattleEnded();
     }
+
+    public void ShowFloatingText(string message, Transform start, float speed = 1f, float riseHeight = 100f)
+    {
+        if (messagePrefab == null || worldCanvas == null)
+        {
+            Debug.LogWarning("FloatingTextPrefab or worldCanvas not assigned!");
+            return;
+        }
+
+        // Spawn prefab
+        GameObject textObj = Instantiate(messagePrefab, worldCanvas);
+        textObj.SetActive(true);
+
+        // Get text component
+        TMP_Text tmpText = textObj.GetComponentInChildren<TMP_Text>();
+        if (tmpText != null)
+            tmpText.text = message;
+        else
+        {
+            Text legacyText = textObj.GetComponentInChildren<Text>();
+            if (legacyText != null)
+                legacyText.text = message;
+        }
+
+        // Set initial position
+        RectTransform rect = textObj.GetComponent<RectTransform>();
+        rect.position = start.position;
+
+        // Compute upward end position
+        Vector3 startPos = rect.position;
+        Vector3 endPos = startPos + Vector3.up * riseHeight;
+
+        StartCoroutine(MoveAndFadeFloatingText(rect, textObj, startPos, endPos, speed));
+    }
+
+    private IEnumerator MoveAndFadeFloatingText(RectTransform rect, GameObject textObj, Vector3 startPos, Vector3 endPos, float speed)
+    {
+        float duration = 1.2f / speed;
+        float t = 0f;
+
+        CanvasGroup group = textObj.GetComponent<CanvasGroup>();
+        if (group == null)
+            group = textObj.AddComponent<CanvasGroup>();
+
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            float progress = Mathf.Clamp01(t / duration);
+
+            // Smooth upward motion
+            rect.position = Vector3.Lerp(startPos, endPos, Mathf.SmoothStep(0, 1, progress));
+
+            // Fade out near the end
+            group.alpha = 1f - Mathf.Pow(progress, 2f);
+
+            yield return null;
+        }
+
+        Destroy(textObj);
+    }
+
+
 
 
 }

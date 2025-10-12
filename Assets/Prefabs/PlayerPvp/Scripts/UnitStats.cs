@@ -29,12 +29,12 @@ public class UnitStats : MonoBehaviour
     [Header("Level")]
     public int currentLevel = 1;
 
-    public int currentCS = 1;
+    public int currentCS = 0;
     public int maxLevel = 20;
 
     public int currentHP; // Tracks actual HP during battle
 
-    public int MaxHP => baseHP + growth.HPPerLevel * (currentLevel - 1);
+    public int MaxHP => baseHP + (currentCS * 2) + growth.HPPerLevel * (currentLevel - 1);
 
     private void Awake()
     {
@@ -88,6 +88,19 @@ public class UnitStats : MonoBehaviour
         else
         {
             Debug.Log($"{name} is already at max level!");
+        }
+    }
+
+    public void Combine()
+    {
+        if (currentCS < 1000)
+        {
+            if (FirebaseUpdater.Instance.IncrementUnitCS(gameObject.name))
+            {
+                currentCS++;
+                Debug.Log($"{name} combined to CS {currentCS}");
+                ResetHP();
+            }
         }
     }
 }
